@@ -45,7 +45,7 @@ export default function Groups() {
           <form className="space-y-2" onSubmit={create}>
             <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm" placeholder="Group name" value={name} onChange={(e) => setName(e.target.value)} required />
             <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm" placeholder="Goal description" value={goal} onChange={(e) => setGoal(e.target.value)} required />
-            <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} required />
+            <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm" type="date" value={targetDate} min={new Date().toISOString().split('T')[0]} onChange={(e) => setTargetDate(e.target.value)} required />
             <Button type="submit" className="w-full">Create</Button>
           </form>
         </Card>

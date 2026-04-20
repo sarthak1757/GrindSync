@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './AuthContext'
-import { createGroup, joinGroupWithInviteCode, subscribeToChallenges, subscribeToGroups } from '../services/firestore'
+import { createGroup, joinGroupWithInviteCode, subscribeToChallenges, subscribeToGroups, deleteGroup as dbDeleteGroup } from '../services/firestore'
 
 const GroupContext = createContext(null)
 
@@ -31,9 +31,14 @@ export function GroupProvider({ children }) {
     await joinGroupWithInviteCode(currentUser, inviteCode)
   }, [currentUser])
 
+  const deleteGroup = useCallback(async (groupId) => {
+    if (!currentUser) return
+    await dbDeleteGroup(groupId)
+  }, [currentUser])
+
   const value = useMemo(
-    () => ({ groups, challenges, createNewGroup, joinGroup }),
-    [groups, challenges, createNewGroup, joinGroup],
+    () => ({ groups, challenges, createNewGroup, joinGroup, deleteGroup }),
+    [groups, challenges, createNewGroup, joinGroup, deleteGroup],
   )
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>
