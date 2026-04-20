@@ -116,3 +116,25 @@ export function sendMentorChat(history, context) {
 
   return callGroqJson(messages)
 }
+
+export async function verifyCodeSolution(title, url, sourceCode) {
+  return callGroqJson([
+    {
+      role: 'system',
+      content: `You are an expert competitive programming judge API.
+You will be given a problem title, URL, and the user's submitted source code.
+Your singular job is to read the source code and determine if it correctly solves the problem's logic.
+Ignore minor syntax flaws if the algorithm is perfectly sound.
+
+You MUST strictly reply with a JSON object of this exact schema:
+{
+  "isCorrect": boolean,
+  "feedback": "A very short, 1-2 sentence string. If correct, praise them. If incorrect, point out the logical flaw (e.g. O(N^2) instead of O(N) or completely wrong approach)."
+}`
+    },
+    {
+      role: 'user',
+      content: JSON.stringify({ questionTitle: title, questionUrl: url, userCode: sourceCode })
+    }
+  ])
+}

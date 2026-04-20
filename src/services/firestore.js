@@ -256,7 +256,45 @@ export async function createChallenge(payload) {
     status: 'pending',
     winner: null,
     createdAt: serverTimestamp(),
+    startedAt: new Date().toISOString()
   })
+}
+
+export async function submitChallengeSolution(challengeId, userId, code, outcome) {
+  const challengeRef = doc(db, 'challenges', challengeId)
+  const snap = await getDoc(challengeRef)
+  if (!snap.exists()) return
+
+  const challenge = snap.data()
+  let updates = {}
+  let isChallenger = challenge.challenger?.userId === userId
+
+  const userRoleStr = isChallenger ? 'challenger' : 'challenged'
+  
+  const updatedUserObj = {
+    ...challenge[userRoleStr],
+    status: 'completed',
+    timeTakenMins: outcome.timeTakenMins,
+    submittedCode: code
+  }
+
+  updates[userRoleStr] = updatedUserObj
+
+  const otherRoleStr = isChallenger ? 'challenged' : 'challenger'
+  const otherUserObj = challenge[otherRoleStr]
+
+  if (otherUserObj?.status === 'completed') {
+    updates.status = 'completed'
+    if (updatedUserObj.timeTakenMins < otherUserObj.timeTakenMins) {
+      updates.winner = updatedUserObj.userId
+    } else if (updatedUserObj.timeTakenMins > otherUserObj.timeTakenMins) {
+      updates.winner = otherUserObj.userId
+    } else {
+      updates.winner = 'draw'
+    }
+  }
+
+  await updateDoc(challengeRef, updates)
 }
 
 export async function deleteGroup(groupId) {

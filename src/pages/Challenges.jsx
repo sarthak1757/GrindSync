@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import ChallengeCard from '../components/challenges/ChallengeCard'
 import ChallengeModal from '../components/challenges/ChallengeModal'
+import ChallengeEditorModal from '../components/challenges/ChallengeEditorModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import { useAuth } from '../context/AuthContext'
@@ -14,6 +15,7 @@ export default function Challenges() {
   const { challenges, groups } = useGroups()
   const { questions } = useQuestions()
   const [open, setOpen] = useState(false)
+  const [activeSolveChallenge, setActiveSolveChallenge] = useState(null)
 
   const active = useMemo(() => challenges.filter((c) => c.status !== 'completed'), [challenges])
   const completed = useMemo(() => challenges.filter((c) => c.status === 'completed'), [challenges])
@@ -47,19 +49,18 @@ export default function Challenges() {
 
   const sendChallenge = async (payload) => {
     try {
-      const question = questions.find((item) => item.id === payload.questionId)
       const friend = friendOptions.find((item) => item.userId === payload.challengedUserId)
-      if (!question || !friend) {
-        toast.error('Select both a question and a friend')
+      if (!friend) {
+        toast.error('Select a friend to challenge.')
         return
       }
 
       await createChallenge({
-        questionId: question.id,
-        questionTitle: question.title,
-        questionUrl: question.url || '',
-        difficulty: question.difficulty || 'intermediate',
-        topic: question.topic || 'general',
+        questionId: payload.questionUrl, // We can use the URL as a unique ID reference or just store it.
+        questionTitle: payload.questionTitle,
+        questionUrl: payload.questionUrl,
+        difficulty: payload.difficulty,
+        topic: 'custom',
         challenger: { userId: currentUser.uid, displayName: currentUser.displayName || currentUser.email, status: 'pending' },
         challenged: { userId: friend.userId, displayName: friend.displayName, status: 'pending' },
         groupId: payload.groupId || null,
@@ -75,7 +76,7 @@ export default function Challenges() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Challenges</h1>
-        <Button onClick={() => setOpen(true)} disabled={!questions.length || !friendOptions.length}>
+        <Button onClick={() => setOpen(true)} disabled={!friendOptions.length}>
           Send Challenge
         </Button>
       </div>
@@ -87,7 +88,7 @@ export default function Challenges() {
         </Card>
       ) : null}
       <Card title="Active Challenges">
-        <div className="space-y-2">{active.map((c) => <ChallengeCard key={c.id} challenge={c} />)}</div>
+        <div className="space-y-2">{active.map((c) => <ChallengeCard key={c.id} challenge={c} onSolve={setActiveSolveChallenge} />)}</div>
       </Card>
       <Card title="Completed Challenges">
         <div className="space-y-2">{completed.map((c) => <ChallengeCard key={c.id} challenge={c} />)}</div>
@@ -112,9 +113,13 @@ export default function Challenges() {
         open={open}
         onClose={() => setOpen(false)}
         onSubmit={sendChallenge}
-        questionOptions={questions}
         friendOptions={friendOptions}
         groupOptions={groups}
+      />
+      <ChallengeEditorModal
+        open={!!activeSolveChallenge}
+        onClose={() => setActiveSolveChallenge(null)}
+        challenge={activeSolveChallenge}
       />
     </div>
   )

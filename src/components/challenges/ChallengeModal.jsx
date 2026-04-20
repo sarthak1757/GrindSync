@@ -3,7 +3,9 @@ import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 
 const initial = {
-  questionId: '',
+  questionTitle: '',
+  questionUrl: '',
+  difficulty: 'easy',
   groupId: '',
   challengedUserId: '',
   expiresHours: 24,
@@ -33,20 +35,33 @@ export default function ChallengeModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Send Challenge">
+    <Modal open={open} onClose={onClose} title="Send Coding Challenge">
       <form className="space-y-3" onSubmit={handleSubmit}>
-        <select
-          value={form.questionId}
-          onChange={(e) => setForm((p) => ({ ...p, questionId: e.target.value }))}
+        <input
+          value={form.questionTitle}
+          onChange={(e) => setForm((p) => ({ ...p, questionTitle: e.target.value }))}
           className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+          placeholder="Problem Title (e.g. Two Sum)"
           required
+        />
+        
+        <input
+          type="url"
+          value={form.questionUrl}
+          onChange={(e) => setForm((p) => ({ ...p, questionUrl: e.target.value }))}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+          placeholder="Problem URL (e.g. https://leetcode.com/...)"
+          required
+        />
+
+        <select
+          value={form.difficulty}
+          onChange={(e) => setForm((p) => ({ ...p, difficulty: e.target.value }))}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
         >
-          <option value="">Select question</option>
-          {questionOptions.map((question) => (
-            <option key={question.id} value={question.id}>
-              {question.title}
-            </option>
-          ))}
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
         </select>
 
         <select
