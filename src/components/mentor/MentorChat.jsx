@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Button from '../ui/Button'
 import Card from '../ui/Card'
 
 export default function MentorChat({ history, onSend, loading }) {
   const [input, setInput] = useState('')
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [history])
 
   const submit = (e) => {
     e.preventDefault()
@@ -21,6 +26,7 @@ export default function MentorChat({ history, onSend, loading }) {
             {msg.content}
           </p>
         ))}
+        <div ref={bottomRef} />
       </div>
       <form onSubmit={submit} className="flex gap-2">
         <input value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm" placeholder="Ask about your prep strategy" />

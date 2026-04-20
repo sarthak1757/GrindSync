@@ -17,23 +17,27 @@ const client = new Groq({
  * @returns {Promise<object>}
  */
 async function callGroqJson(messages) {
-  const response = await client.chat.completions.create({
-    model: MODEL,
-    messages,
-    max_tokens: 1024,
-    response_format: { type: 'json_object' },
-    temperature: 0.6,
-  })
+  try {
+    const response = await client.chat.completions.create({
+      model: MODEL,
+      messages,
+      max_tokens: 1024,
+      response_format: { type: 'json_object' },
+      temperature: 0.6,
+    })
 
-  const raw = response.choices[0]?.message?.content || '{}'
-  // Strip any accidental markdown fences just in case
-  const cleaned = raw
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/\s*```$/, '')
-    .trim()
+    const raw = response.choices[0]?.message?.content || '{}'
+    const cleaned = raw
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/\s*```$/, '')
+      .trim()
 
-  return JSON.parse(cleaned)
+    return JSON.parse(cleaned)
+  } catch (err) {
+    console.error('[Mentor API Error]', err)
+    throw new Error('Failed to reach AI Mentor: ' + err.message)
+  }
 }
 
 /**
@@ -42,7 +46,10 @@ async function callGroqJson(messages) {
  */
 export function generateMentorAnalysis(input) {
   return callGroqJson([
-    { role: 'system', content: SYSTEM_PROMPT },
+    { 
+      role: 'system', 
+      content: SYSTEM_PROMPT + '\nYour response MUST strictly be a JSON object with this shape: { "weakTopics": [{ "topic": "string", "urgency": "low"|"medium"|"high", "recommendation": "string" }], "readinessScore": number (0-100) }.'
+    },
     {
       role: 'user',
       content: JSON.stringify({ task: 'weakness-analysis', ...input }),
@@ -56,10 +63,30 @@ export function generateMentorAnalysis(input) {
  */
 export function generateStudyPlan(input) {
   return callGroqJson([
-    { role: 'system', content: SYSTEM_PROMPT },
+    { 
+      role: 'system', 
+      content: SYSTEM_PROMPT + `\nYour response MUST strictly be a JSON object with this shape:
+{
+  "overview": "string",
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "theme": "string",
+      "dailyGoal": number,
+      "topics": ["string"],
+      "specificQuestions": [
+        { "title": "string", "difficulty": "string", "why": "string" }
+      ],
+      "milestone": "string"
+    }
+  ],
+  "tips": ["string"]
+}
+Create a high-quality 4-week preparation plan targeted at the user's placement goal.`
+    },
     {
       role: 'user',
-      content: JSON.stringify({ task: 'weekly-study-plan', ...input }),
+      content: JSON.stringify({ task: '4-week-study-plan', ...input }),
     },
   ])
 }
@@ -70,9 +97,11 @@ export function generateStudyPlan(input) {
  * @param {object} context – student performance context
  */
 export function sendMentorChat(history, context) {
-  // Build full message list: system → context injection → chat history
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { 
+      role: 'system', 
+      content: SYSTEM_PROMPT + '\nYour response MUST strictly be a JSON object with this shape: { "mentorMessage": "your prose response to the user" }.'
+    },
     {
       role: 'user',
       content: JSON.stringify({ task: 'context', ...context }),

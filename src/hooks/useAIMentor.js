@@ -25,9 +25,15 @@ export function useAIMentor() {
       const result = await sendMentorChat(nextHistory, context)
       setHistory((prev) => [
         ...prev,
-        { role: 'assistant', content: result.mentorMessage || 'I can help with a plan next.' },
+        { role: 'assistant', content: result.mentorMessage || 'My apologies, I could not generate a response.' },
       ])
       return result
+    } catch (err) {
+      setHistory((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Connection to AI Mentor dropped. Please try again.' },
+      ])
+      throw err
     } finally {
       setLoading(false)
     }
