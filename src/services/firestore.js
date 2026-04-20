@@ -12,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  deleteDoc,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { normalizeDifficulty } from '../utils/difficultyNormalizer'
@@ -39,6 +40,19 @@ const defaultUser = (user) => ({
 
 export async function ensureUserDocument(user) {
   await setDoc(doc(db, 'users', user.uid), defaultUser(user), { merge: true })
+}
+
+export function subscribeToUserDoc(userId, callback) {
+  return onSnapshot(doc(db, 'users', userId), (snap) => {
+    callback(snap.exists() ? snap.data() : null)
+  })
+}
+
+export async function saveStudyPlan(userId, planData) {
+  await updateDoc(doc(db, 'users', userId), {
+    studyPlan: planData,
+    updatedAt: serverTimestamp(),
+  })
 }
 
 export async function addQuestionForUser(userId, payload) {
@@ -243,4 +257,8 @@ export async function createChallenge(payload) {
     winner: null,
     createdAt: serverTimestamp(),
   })
+}
+
+export async function deleteGroup(groupId) {
+  await deleteDoc(doc(db, 'groups', groupId))
 }

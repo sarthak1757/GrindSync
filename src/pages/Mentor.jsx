@@ -1,16 +1,25 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import MentorChat from '../components/mentor/MentorChat'
 import MentorInsights from '../components/mentor/MentorInsights'
 import WeeklyReport from '../components/mentor/WeeklyReport'
+import PlanGenerationForm from '../components/mentor/PlanGenerationForm'
+import StudyPlanModal from '../components/mentor/StudyPlanModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import { useQuestions } from '../context/QuestionContext'
+import { useAuth } from '../context/AuthContext'
 import { useAIMentor } from '../hooks/useAIMentor'
+import { saveStudyPlan } from '../services/firestore'
 
 export default function Mentor() {
   const { questions } = useQuestions()
+  const { currentUser } = useAuth()
   const { loading, analysis, history, runAnalysis, askMentor, makePlan } = useAIMentor()
+
+  const [showPlanForm, setShowPlanForm] = useState(false)
+  const [generatedPlan, setGeneratedPlan] = useState(null)
+  const [isSavingPlan, setIsSavingPlan] = useState(false)
 
   const contextPayload = useMemo(() => {
     const topicBreakdown = questions.reduce((acc, question) => {
@@ -44,7 +53,6 @@ export default function Mentor() {
       totalSolved: questions.length,
       topicBreakdown,
       recentQuestions: questions.slice(0, 20),
-      goal: { type: 'placement', targetDate: '2026-12-31T00:00:00.000Z' },
       streak: 0,
       revisionCompletionRate,
     }
@@ -59,22 +67,60 @@ export default function Mentor() {
     }
   }
 
-  const plan = async () => {
+  const handleGeneratePlan = async (formData) => {
     try {
-      const result = await makePlan(contextPayload)
-      toast.success(result.mentorMessage || 'Plan generated')
+      const payload = {
+        ...contextPayload,
+        placementGoal: formData.placementGoal,
+        targetDate: formData.targetDate,
+        daysPerWeekToStudy: formData.daysPerWeek,
+      }
+      const result = await makePlan(payload)
+      setGeneratedPlan(result)
+      setShowPlanForm(false)
     } catch (error) {
       toast.error(error.message)
     }
   }
 
+  const handleSavePlan = async () => {
+    if (!currentUser || !generatedPlan) return
+    setIsSavingPlan(true)
+    try {
+      await saveStudyPlan(currentUser.uid, generatedPlan)
+      toast.success('Study plan saved to Dashboard!')
+      setGeneratedPlan(null)
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setIsSavingPlan(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {showPlanForm && (
+        <PlanGenerationForm 
+          onGenerate={handleGeneratePlan} 
+          loading={loading} 
+          onClose={() => setShowPlanForm(false)} 
+        />
+      )}
+
+      {generatedPlan && (
+        <StudyPlanModal 
+          plan={generatedPlan} 
+          onSave={handleSavePlan} 
+          onDiscard={() => setGeneratedPlan(null)} 
+          isSaving={isSavingPlan} 
+        />
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">AI Mentor</h1>
         <div className="flex gap-2">
           <Button onClick={generate} disabled={loading}>Generate analysis</Button>
-          <Button variant="ghost" onClick={plan} disabled={loading}>Make me a plan</Button>
+          <Button variant="ghost" onClick={() => setShowPlanForm(true)} disabled={loading}>Make me a plan</Button>
         </div>
       </div>
       <section className="grid gap-4 xl:grid-cols-2">
