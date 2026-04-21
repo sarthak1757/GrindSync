@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { verifyCodeSolution } from '../../services/aiMentor'
@@ -11,22 +11,29 @@ export default function ChallengeEditorModal({ open, onClose, challenge }) {
   const { currentUser } = useAuth()
   const [code, setCode] = useState('// Paste your solution here...\n')
   const [loading, setLoading] = useState(false)
-  const [elapsedMins, setElapsedMins] = useState(0)
+  const [elapsedSecs, setElapsedSecs] = useState(0)
+  const startedAtRef = useRef(null)
 
+  // Timer starts the moment the user opens the editor — not when challenge was created
   useEffect(() => {
-    if (!challenge || !open) return
-    const started = new Date(challenge.startedAt).getTime()
-    
-    // Initial evaluation
-    setElapsedMins(Math.max(1, Math.floor((Date.now() - started) / (1000 * 60))))
+    if (!open || !challenge) return
+
+    startedAtRef.current = Date.now()
+    setElapsedSecs(0)
+    setCode('// Paste your solution here...\n')
 
     const interval = setInterval(() => {
-      setElapsedMins(Math.max(1, Math.floor((Date.now() - started) / (1000 * 60))))
-    }, 60000)
+      setElapsedSecs(Math.floor((Date.now() - startedAtRef.current) / 1000))
+    }, 1000)
+
     return () => clearInterval(interval)
-  }, [challenge, open])
+  }, [open, challenge])
 
   if (!challenge) return null
+
+  const mins = Math.floor(elapsedSecs / 60)
+  const secs = elapsedSecs % 60
+  const displayTime = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 
   const handleSubmit = async () => {
     if (code.trim() === '' || code.includes('// Paste your solution here...')) {
@@ -39,9 +46,8 @@ export default function ChallengeEditorModal({ open, onClose, challenge }) {
       const result = await verifyCodeSolution(challenge.questionTitle, challenge.questionUrl, code)
       if (result.isCorrect) {
         toast.success('Solution Accepted! Awesome job.')
-        await submitChallengeSolution(challenge.id, currentUser.uid, code, {
-          timeTakenMins: elapsedMins
-        })
+        const timeTakenMins = Math.max(1, Math.ceil(elapsedSecs / 60))
+        await submitChallengeSolution(challenge.id, currentUser.uid, code, { timeTakenMins })
         onClose()
       } else {
         toast.error(`Solution rejected: ${result.feedback}`, { duration: 5000 })
@@ -66,8 +72,8 @@ export default function ChallengeEditorModal({ open, onClose, challenge }) {
             <p className="text-xs text-zinc-400 mt-1">{challenge.difficulty}</p>
           </div>
           <div className="text-right">
-            <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Time Elapsed</span>
-            <p className="text-lg font-mono font-bold text-zinc-200">{elapsedMins} mins</p>
+            <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Your Timer</span>
+            <p className="text-2xl font-mono font-bold text-emerald-400 tabular-nums">{displayTime}</p>
           </div>
         </div>
 
@@ -82,7 +88,11 @@ export default function ChallengeEditorModal({ open, onClose, challenge }) {
 
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={loading} className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white border-none shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+          <Button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white border-none shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+          >
             <Play className="w-4 h-4" />
             {loading ? 'Evaluating...' : 'Submit & Run Code against AI'}
           </Button>
