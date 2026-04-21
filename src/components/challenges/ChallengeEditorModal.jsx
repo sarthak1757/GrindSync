@@ -4,6 +4,7 @@ import Button from '../ui/Button'
 import { verifyCodeSolution } from '../../services/aiMentor'
 import { submitChallengeSolution } from '../../services/firestore'
 import { useAuth } from '../../context/AuthContext'
+import { useChallenge } from '../../hooks/useChallenge'
 import toast from 'react-hot-toast'
 import { Play } from 'lucide-react'
 
@@ -13,17 +14,24 @@ export default function ChallengeEditorModal({ open, onClose, challenge, started
   const [loading, setLoading] = useState(false)
   const [elapsedSecs, setElapsedSecs] = useState(0)
 
-  // Use the startedAt timestamp from parent — never resets on close/reopen
+  // Challenge time left (global expiry countdown)
+  const { timeLeftMs } = useChallenge(challenge?.expiresAt)
+  const tlTotalSecs = Math.floor(timeLeftMs / 1000)
+  const tlMins = Math.floor(tlTotalSecs / 60)
+  const tlSecs = tlTotalSecs % 60
+  const timeLeftDisplay = timeLeftMs <= 0
+    ? 'Expired!'
+    : `${tlMins}m ${String(tlSecs).padStart(2, '0')}s`
+  const timeLeftUrgent = timeLeftMs > 0 && timeLeftMs <= 60000
+
+  // Personal solve timer — starts from when URL was clicked, persists across modal close
   useEffect(() => {
     if (!open || !challenge || !startedAt) return
 
-    // Compute how much time has already elapsed (in case they closed and reopened)
     setElapsedSecs(Math.floor((Date.now() - startedAt) / 1000))
-
     const interval = setInterval(() => {
       setElapsedSecs(Math.floor((Date.now() - startedAt) / 1000))
     }, 1000)
-
     return () => clearInterval(interval)
   }, [open, challenge, startedAt])
 
@@ -38,7 +46,6 @@ export default function ChallengeEditorModal({ open, onClose, challenge, started
       toast.error('Please paste a valid solution before submitting.')
       return
     }
-
     setLoading(true)
     try {
       const result = await verifyCodeSolution(challenge.questionTitle, challenge.questionUrl, code)
@@ -60,21 +67,36 @@ export default function ChallengeEditorModal({ open, onClose, challenge, started
   return (
     <Modal open={open} onClose={onClose} title="Solve Challenge">
       <div className="space-y-4">
-        <div className="flex items-center justify-between rounded-lg bg-zinc-900 p-3">
-          <div>
-            <h3 className="font-semibold text-indigo-400">
+
+        {/* Info bar with problem title + both timers */}
+        <div className="flex items-center justify-between rounded-lg bg-zinc-900 p-3 gap-4">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-indigo-400 truncate">
               <a href={challenge.questionUrl} target="_blank" rel="noreferrer" className="hover:underline">
                 {challenge.questionTitle} ↗
               </a>
             </h3>
             <p className="text-xs text-zinc-400 mt-1">{challenge.difficulty}</p>
           </div>
-          <div className="text-right">
-            <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Your Timer</span>
-            <p className="text-2xl font-mono font-bold text-emerald-400 tabular-nums">{displayTime}</p>
+
+          <div className="flex gap-5 shrink-0 divide-x divide-zinc-700">
+            {/* Personal solve timer */}
+            <div className="text-center pr-5">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Your Timer</p>
+              <p className="text-xl font-mono font-bold text-emerald-400 tabular-nums">{displayTime}</p>
+            </div>
+
+            {/* Challenge deadline */}
+            <div className="text-center pl-5">
+              <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Time Left</p>
+              <p className={`text-xl font-mono font-bold tabular-nums ${timeLeftUrgent ? 'text-red-400 animate-pulse' : 'text-yellow-400'}`}>
+                {timeLeftDisplay}
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Code editor */}
         <div className="rounded-lg border border-zinc-700 bg-zinc-950 p-1">
           <textarea
             className="w-full h-64 bg-transparent p-3 text-sm font-mono text-emerald-400 placeholder:text-zinc-600 focus:outline-none resize-y"
