@@ -8,9 +8,12 @@ import { Code2, Trash2 } from 'lucide-react'
 export default function ChallengeCard({ challenge, onSolve, onDelete, onViewQuestion }) {
   const { currentUser } = useAuth()
   const { timeLeftMs } = useChallenge(challenge.expiresAt)
-  const totalMinutes = Math.floor(timeLeftMs / (1000 * 60))
-  const hours = Math.floor(totalMinutes / 60)
-  const mins = totalMinutes % 60
+  const totalSecs = Math.floor(timeLeftMs / 1000)
+  const mins = Math.floor(totalSecs / 60)
+  const secs = totalSecs % 60
+  const timeLeftDisplay = timeLeftMs <= 0
+    ? 'Expired'
+    : `${mins}m ${String(secs).padStart(2, '0')}s`
 
   const isChallenger = challenge.challenger?.userId === currentUser?.uid
   const isChallenged = challenge.challenged?.userId === currentUser?.uid
@@ -43,8 +46,8 @@ export default function ChallengeCard({ challenge, onSolve, onDelete, onViewQues
             {challenge.challenger?.displayName} vs {challenge.challenged?.displayName}
           </p>
           {challenge.status !== 'completed' ? (
-            <p className="mt-1 text-xs text-zinc-500">
-              Time left: {hours}h {mins}m
+            <p className={`mt-1 text-xs font-mono tabular-nums ${timeLeftMs <= 60000 ? 'text-red-400' : 'text-zinc-500'}`}>
+              Time left: {timeLeftDisplay}
             </p>
           ) : (
             <p className="mt-1 text-xs text-zinc-500">
