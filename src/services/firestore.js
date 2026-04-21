@@ -127,7 +127,7 @@ export async function updateQuestionRevision(userId, questionId, outcome) {
     {
       solvedAt: new Date().toISOString(),
       timeTakenMins: outcome.latestTimeTakenMins || outcome.averageTimeMins || 0,
-      felt: outcome.feelingAfterRevision || 'okay',
+      felt: outcome.appliedGrade || outcome.feelingAfterRevision || 'okay',
       notes: outcome.notes || '',
     },
   ]
