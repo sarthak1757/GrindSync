@@ -110,10 +110,11 @@ export function subscribeToQuestions(userId, callback) {
 }
 
 export function subscribeToRevisionQueue(userId, callback) {
+  // Note: combining where('status', 'in') + orderBy requires a composite Firestore index.
+  // Sorting is done client-side in Revision.jsx instead to avoid that requirement.
   const q = query(
     collection(db, 'users', userId, 'revisionQueue'),
     where('status', 'in', ['pending', 'snoozed']),
-    orderBy('scheduledFor', 'asc'),
   )
   return onSnapshot(q, (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
 }
