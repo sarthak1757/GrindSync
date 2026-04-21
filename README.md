@@ -2,6 +2,14 @@
 
 GrindSync is a comprehensive DSA (Data Structures and Algorithms) tracking web application designed to help software engineers systematically improve their coding skills on platforms like LeetCode and Codeforces.
 
+## 💡 Why GrindSync Exists
+
+Every placement season, thousands of students grind LeetCode in isolation. They solve 300+ problems but forget half of them by interview time because they never revisited the hard ones when memory was fading.
+
+GrindSync fixes this by bringing neuroscience-backed spaced repetition to coding practice. It's not just a tracker—it's a personal coach that knows when you're about to forget something and surfaces it at the perfect moment.
+
+The Chrome extension removes friction. The AI mentor removes isolation. The group challenges remove the loneliness of solo prep. Together, they turn grinding into growth.
+
 ## 🚀 Core Features
 
 - **Spaced Repetition System (SRS)**: Say goodbye to manually organizing your practice schedule. GrindSync employs a mathematically driven revision algorithm to strictly manage your queue. It analyzes the specific question difficulty, your historical time-to-solve, and your confidence ratings to intelligently surface the exact questions you need to re-practice, right when you're about to forget them.
