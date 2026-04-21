@@ -5,7 +5,7 @@ import { useChallenge } from '../../hooks/useChallenge'
 import { useAuth } from '../../context/AuthContext'
 import { Code2, Trash2 } from 'lucide-react'
 
-export default function ChallengeCard({ challenge, onSolve, onDelete }) {
+export default function ChallengeCard({ challenge, onSolve, onDelete, onViewQuestion }) {
   const { currentUser } = useAuth()
   const { timeLeftMs } = useChallenge(challenge.expiresAt)
   const totalMinutes = Math.floor(timeLeftMs / (1000 * 60))
@@ -29,7 +29,13 @@ export default function ChallengeCard({ challenge, onSolve, onDelete }) {
     <Card>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <a href={challenge.questionUrl} target="_blank" rel="noreferrer" className="font-medium text-emerald-400 hover:underline">
+          <a
+            href={challenge.questionUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-emerald-400 hover:underline"
+            onClick={() => onViewQuestion?.(challenge.id)}
+          >
             {challenge.questionTitle} ↗
           </a>
           <p className="text-xs text-zinc-400 mt-1">{challenge.topic} • {challenge.difficulty}</p>

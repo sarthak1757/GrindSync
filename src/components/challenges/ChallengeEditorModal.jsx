@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { verifyCodeSolution } from '../../services/aiMentor'
@@ -7,27 +7,25 @@ import { useAuth } from '../../context/AuthContext'
 import toast from 'react-hot-toast'
 import { Play } from 'lucide-react'
 
-export default function ChallengeEditorModal({ open, onClose, challenge }) {
+export default function ChallengeEditorModal({ open, onClose, challenge, startedAt }) {
   const { currentUser } = useAuth()
   const [code, setCode] = useState('// Paste your solution here...\n')
   const [loading, setLoading] = useState(false)
   const [elapsedSecs, setElapsedSecs] = useState(0)
-  const startedAtRef = useRef(null)
 
-  // Timer starts the moment the user opens the editor — not when challenge was created
+  // Use the startedAt timestamp from parent — never resets on close/reopen
   useEffect(() => {
-    if (!open || !challenge) return
+    if (!open || !challenge || !startedAt) return
 
-    startedAtRef.current = Date.now()
-    setElapsedSecs(0)
-    setCode('// Paste your solution here...\n')
+    // Compute how much time has already elapsed (in case they closed and reopened)
+    setElapsedSecs(Math.floor((Date.now() - startedAt) / 1000))
 
     const interval = setInterval(() => {
-      setElapsedSecs(Math.floor((Date.now() - startedAtRef.current) / 1000))
+      setElapsedSecs(Math.floor((Date.now() - startedAt) / 1000))
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [open, challenge])
+  }, [open, challenge, startedAt])
 
   if (!challenge) return null
 

@@ -16,6 +16,24 @@ export default function Challenges() {
   const [open, setOpen] = useState(false)
   const [activeSolveChallenge, setActiveSolveChallenge] = useState(null)
   const prevChallengesRef = useRef({})
+  // Persists start time per challenge so closing/reopening modal doesn't reset timer
+  const solveStartTimesRef = useRef({})
+
+  const handleOpenSolve = (challenge) => {
+    // Start time was already recorded when they clicked the URL
+    // Fall back to now if they somehow skipped the URL click
+    if (!solveStartTimesRef.current[challenge.id]) {
+      solveStartTimesRef.current[challenge.id] = Date.now()
+    }
+    setActiveSolveChallenge(challenge)
+  }
+
+  // Called when the user clicks the problem URL — this is when competition officially begins
+  const handleViewQuestion = (challengeId) => {
+    if (!solveStartTimesRef.current[challengeId]) {
+      solveStartTimesRef.current[challengeId] = Date.now()
+    }
+  }
 
   // Seed the ref on first load (no notifications on initial data)
   useEffect(() => {
@@ -212,7 +230,7 @@ export default function Challenges() {
         <div className="space-y-2">
           {active.length === 0 && <p className="text-sm text-zinc-400">No active challenges.</p>}
           {active.map((c) => (
-            <ChallengeCard key={c.id} challenge={c} onSolve={setActiveSolveChallenge} onDelete={handleDeleteChallenge} />
+            <ChallengeCard key={c.id} challenge={c} onSolve={handleOpenSolve} onDelete={handleDeleteChallenge} onViewQuestion={handleViewQuestion} />
           ))}
         </div>
       </Card>
@@ -254,6 +272,7 @@ export default function Challenges() {
         open={!!activeSolveChallenge}
         onClose={() => setActiveSolveChallenge(null)}
         challenge={activeSolveChallenge}
+        startedAt={activeSolveChallenge ? (solveStartTimesRef.current[activeSolveChallenge.id] ?? Date.now()) : null}
       />
     </div>
   )
