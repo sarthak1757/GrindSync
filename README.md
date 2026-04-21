@@ -15,7 +15,7 @@ GrindSync is a comprehensive DSA (Data Structures and Algorithms) tracking web a
 - **Core**: React.js, Context API
 - **Design & UI**: Tailwind CSS, Recharts (Data Visualization), Lucide React (Icons), React Hot Toast (Notifications)
 - **Backend & Database**: Firebase Authentication, Firebase Cloud Firestore
-- **AI Integration**: Google Gemini API
+- **AI Integration**: Groq API
 
 ## 📥 Local Setup & Installation
 
@@ -24,7 +24,7 @@ GrindSync is a comprehensive DSA (Data Structures and Algorithms) tracking web a
    ```bash
    npm install
    ```
-3. Set up your environment variables. Duplicate the `.env.example` file, rename it to `.env`, and populate it entirely with your Firebase project configuration keys and your Gemini API key:
+3. Set up your environment variables. Duplicate the `.env.example` file, rename it to `.env`, and populate it entirely with your Firebase project configuration keys and your Groq API key:
    ```env
    VITE_FIREBASE_API_KEY=your_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -32,7 +32,7 @@ GrindSync is a comprehensive DSA (Data Structures and Algorithms) tracking web a
    VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
    VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
    VITE_FIREBASE_APP_ID=your_app_id
-   VITE_GEMINI_API_KEY=your_gemini_key
+   VITE_GROQ_API_KEY=your_groq_key
    ```
 4. Start the local development server:
    ```bash
