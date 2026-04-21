@@ -7,9 +7,12 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  sendPasswordResetEmail,
+  deleteUser,
+  updateProfile,
 } from 'firebase/auth'
 import { auth, firebaseConfigError } from '../services/firebase'
-import { ensureUserDocument } from '../services/firestore'
+import { ensureUserDocument, updateUserProfileDB } from '../services/firestore'
 
 const AuthContext = createContext(null)
 
@@ -54,12 +57,32 @@ export function AuthProvider({ children }) {
     return signOut(auth)
   }
 
+  const resetPassword = (email) => {
+    if (!auth) throw new Error('Unable to reset password right now.')
+    return sendPasswordResetEmail(auth, email)
+  }
+
+  const deleteAccount = () => {
+    if (!auth || !auth.currentUser) throw new Error('No user logged in.')
+    return deleteUser(auth.currentUser)
+  }
+
+  const updateUsername = async (newUsername) => {
+    if (!auth || !auth.currentUser) throw new Error('No user logged in.')
+    await updateProfile(auth.currentUser, { displayName: newUsername })
+    await updateUserProfileDB(auth.currentUser.uid, { displayName: newUsername })
+    setCurrentUser({ ...auth.currentUser })
+  }
+
   const value = useMemo(() => ({
     currentUser,
     loading,
     loginWithGoogle,
     loginWithEmail,
     registerWithEmail,
+    resetPassword,
+    deleteAccount,
+    updateUsername,
     logout,
     firebaseConfigError,
   }), [currentUser, loading])

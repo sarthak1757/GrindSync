@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Flame, Medal, Target, Zap, Clock, Star, Trophy, Activity, Calendar as CalendarIcon } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { Flame, Medal, Target, Zap, Clock, Star, Trophy, Activity, Calendar as CalendarIcon, Edit2, Check, X } from 'lucide-react'
 import CalendarHeatmap from 'react-calendar-heatmap'
 import 'react-calendar-heatmap/dist/styles.css'
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -23,7 +24,10 @@ const ICONS = {
 }
 
 export default function Profile() {
-  const { currentUser } = useAuth()
+  const { currentUser, deleteAccount, updateUsername, logout } = useAuth()
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [newName, setNewName] = useState("")
   const { questions } = useQuestions()
   const { challenges } = useGroups()
 
@@ -66,7 +70,66 @@ export default function Profile() {
           {currentUser?.displayName?.charAt(0)?.toUpperCase() || currentUser?.email?.charAt(0)?.toUpperCase()}
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-zinc-100">{currentUser?.displayName || 'Grinder'}</h1>
+          {isEditingName ? (
+            <div className="flex items-center gap-2 mb-1">
+              <input
+                type="text"
+                className="bg-zinc-900 border border-zinc-700 text-zinc-100 rounded px-2 py-1 outline-none focus:border-indigo-500 font-bold text-lg max-w-[200px]"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                autoFocus
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    if (!newName.trim()) return;
+                    try {
+                      await updateUsername(newName.trim());
+                      setIsEditingName(false);
+                      toast.success("Username updated!");
+                    } catch (err) {
+                      toast.error("Failed to update username.");
+                    }
+                  } else if (e.key === 'Escape') {
+                    setIsEditingName(false);
+                  }
+                }}
+              />
+              <button 
+                onClick={async () => {
+                   if (!newName.trim()) return;
+                   try {
+                     await updateUsername(newName.trim());
+                     setIsEditingName(false);
+                     toast.success("Username updated!");
+                   } catch (err) {
+                     toast.error("Failed to update username.");
+                   }
+                }}
+                className="p-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => setIsEditingName(false)}
+                className="p-1.5 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 rounded"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-zinc-100">{currentUser?.displayName || 'Grinder'}</h1>
+              <button 
+                onClick={() => {
+                  setNewName(currentUser?.displayName || 'Grinder');
+                  setIsEditingName(true);
+                }}
+                className="text-zinc-500 hover:text-indigo-400 transition-colors p-1"
+                title="Edit Username"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            </div>
+          )}
           <p className="text-zinc-400">{currentUser?.email}</p>
         </div>
       </div>
@@ -283,6 +346,40 @@ export default function Profile() {
           )}
         </div>
       </Modal>
+
+      {/* DANGER ZONE */}
+      <Card title="Danger Zone" className="bg-red-950/20 border-red-900/30">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mt-2">
+          <div>
+            <p className="text-sm font-medium text-red-400">Delete Account</p>
+            <p className="text-xs text-red-200/50 mt-1">Once you delete your account, there is no going back. Please be certain.</p>
+          </div>
+          <button 
+            disabled={isDeleting}
+            className="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-sm font-medium rounded-lg border border-red-500/30 transition-colors whitespace-nowrap"
+            onClick={async () => {
+              if (window.confirm("Are you absolutely sure you want to delete your entire account? This cannot be undone.")) {
+                setIsDeleting(true)
+                try {
+                  await deleteAccount()
+                  toast.success("Account successfully deleted.")
+                } catch (err) {
+                  if (err.code === 'auth/requires-recent-login') {
+                    toast.error("For security reasons, please log out and log back in before deleting your account.")
+                    await logout()
+                  } else {
+                    toast.error(err.message || "Failed to delete account.")
+                  }
+                } finally {
+                  setIsDeleting(false)
+                }
+              }
+            }}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Account'}
+          </button>
+        </div>
+      </Card>
 
     </div>
   )

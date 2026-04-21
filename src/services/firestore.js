@@ -42,6 +42,13 @@ export async function ensureUserDocument(user) {
   await setDoc(doc(db, 'users', user.uid), defaultUser(user), { merge: true })
 }
 
+export async function updateUserProfileDB(userId, payload) {
+  await updateDoc(doc(db, 'users', userId), {
+    ...payload,
+    updatedAt: serverTimestamp(),
+  })
+}
+
 export function subscribeToUserDoc(userId, callback) {
   return onSnapshot(doc(db, 'users', userId), (snap) => {
     callback(snap.exists() ? snap.data() : null)
