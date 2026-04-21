@@ -8,7 +8,7 @@ import Card from '../components/ui/Card'
 import { useAuth } from '../context/AuthContext'
 import { useGroups } from '../context/GroupContext'
 import { useQuestions } from '../context/QuestionContext'
-import { createChallenge } from '../services/firestore'
+import { createChallenge, deleteChallenge } from '../services/firestore'
 
 export default function Challenges() {
   const { currentUser } = useAuth()
@@ -64,11 +64,21 @@ export default function Challenges() {
         challenger: { userId: currentUser.uid, displayName: currentUser.displayName || currentUser.email, status: 'pending' },
         challenged: { userId: friend.userId, displayName: friend.displayName, status: 'pending' },
         groupId: payload.groupId || null,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * Number(payload.expiresHours || 24)).toISOString(),
+        expiresAt: new Date(Date.now() + 1000 * 60 * Number(payload.expiresMins || 30)).toISOString(),
       })
       toast.success('Challenge sent')
     } catch (error) {
       toast.error(error.message)
+    }
+  }
+
+  const handleDeleteChallenge = async (challengeId) => {
+    if (!window.confirm('Delete this challenge?')) return
+    try {
+      await deleteChallenge(challengeId)
+      toast.success('Challenge deleted')
+    } catch (err) {
+      toast.error('Failed to delete challenge.')
     }
   }
 
@@ -88,10 +98,10 @@ export default function Challenges() {
         </Card>
       ) : null}
       <Card title="Active Challenges">
-        <div className="space-y-2">{active.map((c) => <ChallengeCard key={c.id} challenge={c} onSolve={setActiveSolveChallenge} />)}</div>
+        <div className="space-y-2">{active.map((c) => <ChallengeCard key={c.id} challenge={c} onSolve={setActiveSolveChallenge} onDelete={handleDeleteChallenge} />)}</div>
       </Card>
       <Card title="Completed Challenges">
-        <div className="space-y-2">{completed.map((c) => <ChallengeCard key={c.id} challenge={c} />)}</div>
+        <div className="space-y-2">{completed.map((c) => <ChallengeCard key={c.id} challenge={c} onDelete={handleDeleteChallenge} />)}</div>
       </Card>
       <Card title="Head-to-Head Record">
         {!headToHead.length ? (

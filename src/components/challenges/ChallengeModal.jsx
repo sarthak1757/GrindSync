@@ -8,14 +8,13 @@ const initial = {
   difficulty: 'easy',
   groupId: '',
   challengedUserId: '',
-  expiresHours: 24,
+  expiresMins: 30,
 }
 
 export default function ChallengeModal({
   open,
   onClose,
   onSubmit,
-  questionOptions = [],
   friendOptions = [],
   groupOptions = [],
 }) {
@@ -91,16 +90,18 @@ export default function ChallengeModal({
           ))}
         </select>
 
-        <input
-          value={form.expiresHours}
-          type="number"
-          min={1}
-          max={168}
-          onChange={(e) => setForm((p) => ({ ...p, expiresHours: Number(e.target.value || 24) }))}
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
-          placeholder="Expires in hours"
-          required
-        />
+        <div className="space-y-1">
+          <label className="text-xs text-zinc-400 pl-1">Expires in (minutes)</label>
+          <input
+            value={form.expiresMins}
+            type="number"
+            min={1}
+            max={1440}
+            onChange={(e) => setForm((p) => ({ ...p, expiresMins: Number(e.target.value || 30) }))}
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
+            required
+          />
+        </div>
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? 'Sending...' : 'Send'}

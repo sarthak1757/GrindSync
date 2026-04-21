@@ -260,6 +260,10 @@ export async function createChallenge(payload) {
   })
 }
 
+export async function deleteChallenge(challengeId) {
+  await deleteDoc(doc(db, 'challenges', challengeId))
+}
+
 export async function submitChallengeSolution(challengeId, userId, code, outcome) {
   const challengeRef = doc(db, 'challenges', challengeId)
   const snap = await getDoc(challengeRef)

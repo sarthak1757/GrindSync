@@ -3,9 +3,9 @@ import Badge from '../ui/Badge'
 import Button from '../ui/Button'
 import { useChallenge } from '../../hooks/useChallenge'
 import { useAuth } from '../../context/AuthContext'
-import { Code2 } from 'lucide-react'
+import { Code2, Trash2 } from 'lucide-react'
 
-export default function ChallengeCard({ challenge, onSolve }) {
+export default function ChallengeCard({ challenge, onSolve, onDelete }) {
   const { currentUser } = useAuth()
   const { timeLeftMs } = useChallenge(challenge.expiresAt)
   const totalMinutes = Math.floor(timeLeftMs / (1000 * 60))
@@ -17,10 +17,17 @@ export default function ChallengeCard({ challenge, onSolve }) {
 
   const myStatus = isChallenger ? challenge.challenger?.status : isChallenged ? challenge.challenged?.status : null
   const canSolve = challenge.status !== 'completed' && myStatus === 'pending'
+  
+  // Show "Waiting..." if you submitted but it's not completed globally
+  const displayStatus = challenge.status === 'completed'
+    ? 'completed'
+    : myStatus === 'completed'
+      ? 'waiting for opponent'
+      : challenge.status
 
   return (
     <Card>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <a href={challenge.questionUrl} target="_blank" rel="noreferrer" className="font-medium text-emerald-400 hover:underline">
             {challenge.questionTitle} ↗
@@ -42,15 +49,22 @@ export default function ChallengeCard({ challenge, onSolve }) {
           )}
         </div>
         
-        <div className="flex flex-col items-end gap-2">
-          <Badge tone={challenge.status === 'completed' ? 'success' : 'warning'}>
-            {challenge.status}
+        <div className="flex sm:flex-col items-center sm:items-end gap-2">
+          <Badge tone={displayStatus === 'completed' ? 'success' : displayStatus === 'waiting for opponent' ? 'info' : 'warning'}>
+            {displayStatus}
           </Badge>
-          {canSolve && (
-            <Button size="sm" onClick={() => onSolve(challenge)} className="gap-2 shrink-0 bg-indigo-600 hover:bg-indigo-500 border-none">
-              <Code2 className="w-4 h-4" /> Solve Code
-            </Button>
-          )}
+          <div className="flex flex-row items-center gap-2">
+            {canSolve && (
+              <Button size="sm" onClick={() => onSolve(challenge)} className="gap-2 shrink-0 bg-indigo-600 hover:bg-indigo-500 border-none">
+                <Code2 className="w-4 h-4" /> Solve
+              </Button>
+            )}
+            {onDelete && (
+              <Button size="sm" variant="ghost" onClick={() => onDelete(challenge.id)} className="text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2">
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </Card>
