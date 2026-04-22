@@ -10,44 +10,71 @@ GrindSync fixes this by bringing neuroscience-backed spaced repetition to coding
 
 The Chrome extension removes friction. The AI mentor removes isolation. The group challenges remove the loneliness of solo prep. Together, they turn grinding into growth.
 
-## 🚀 Core Features
+## Demo Account (For Evaluation)
 
-- **Spaced Repetition System (SRS)**: Say goodbye to manually organizing your practice schedule. GrindSync employs a mathematically driven revision algorithm to strictly manage your queue. It analyzes the specific question difficulty, your historical time-to-solve, and your confidence ratings to intelligently surface the exact questions you need to re-practice, right when you're about to forget them.
-- **Automated Tracking via Extension**: When paired with the [GrindSync Chrome Extension](https://github.com/sarthak1757/GrindSync-Extension), the app automatically intercepts and logs your successful submissions directly from LeetCode and Codeforces without you leaving the tab.
-- **Dynamic Profile Analytics**: Visualizes your DSA progress natively through a sophisticated dashboard featuring GitHub-style solve heatmaps, topic mastery pie charts, and 30-day performance trend graphs.
-- **Multiplayer Challenges & Groups**: Create groups or challenge your friends directly to timed coding battles with live tracking.
-- **AI Mentorship**: Equipped with a generative AI assistant configured to provide architectural guidance and hints when you get completely stuck on a LeetCode problem.
+**Email:** `demo@grindsync.com`  
+**Password:** `Demo@123`
 
-## 🛠 Technologies
+## Setup (Exact Steps)
 
-- **Core**: React.js, Context API
-- **Design & UI**: Tailwind CSS, Recharts (Data Visualization), Lucide React (Icons), React Hot Toast (Notifications)
-- **Backend & Database**: Firebase Authentication, Firebase Cloud Firestore
-- **AI Integration**: Groq API
-
-## 📥 Local Setup & Installation
-
-1. Clone the repository.
-2. Install the necessary dependencies via npm:
-   ```bash
-   npm install
-   ```
-3. Set up your environment variables. Duplicate the `.env.example` file, rename it to `.env`, and populate it entirely with your Firebase project configuration keys and your Groq API key:
+1. Clone repo
+2. `cd grindsync && npm install`
+3. Create `.env` with:
    ```env
-   VITE_FIREBASE_API_KEY=your_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   VITE_GROQ_API_KEY=your_groq_key
+   VITE_FIREBASE_API_KEY=...
+   VITE_GROQ_API_KEY=...
    ```
-4. Start the local development server:
-   ```bash
-   npm run dev
-   ```
+4. `npm run dev`
+5. Open `http://localhost:5174`
 
-## 🔌 Companion Extension
+## Core Features Implemented
 
-To unlock the automated tracking features, you must install the **GrindSync Tracker Chrome Extension**. 
-You can log directly into the extension's popup interface using the same Email and Password credentials you create here on the web application.
+### 1. Spaced Repetition System ✅
+- Questions resurface based on performance
+- Time-based mastery scoring
+- 1.5x time override for accuracy
+
+### 2. AI Mentor ✅  
+- Google Gemini integration
+- Weakness analysis
+- Conversational guidance
+
+### 3. Chrome Extension ✅
+- Auto-tracks LeetCode/Codeforces
+- Background service worker
+- Real-time sync to Firestore
+
+### 4. Group Challenges ✅
+- Create groups with invite codes
+- Live leaderboards
+- 1v1 challenges with auto-winner
+
+### 5. Analytics Dashboard ✅
+- Contribution heatmap (365 days)
+- Topic mastery breakdown
+- Solve history graphs
+
+## React Concepts Used
+
+- ✅ Context API (Auth, Questions, Groups)
+- ✅ Custom Hooks (useRevisionScheduler, useAIMentor)
+- ✅ useMemo/useCallback for optimization
+- ✅ React.lazy + Suspense for code splitting
+- ✅ Real-time Firestore listeners
+- ✅ Protected Routes
+- ✅ Controlled components throughout
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    User --> React_App[React App]
+    React_App --> Context
+    Context --> Firestore[(Firestore)]
+    
+    Extension --> Background_js[Background.js]
+    Background_js --> Firestore
+    
+    AI_Mentor[AI Mentor] --> Groq_API[Groq API]
+    Groq_API --> Response
+```
