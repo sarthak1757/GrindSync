@@ -223,8 +223,7 @@ const run = async () => {
   console.log('🔁 Seeding 5 revisions due today...');
   // Set scheduledFor to today at 00:01 — Revision page shows all pending/snoozed
   // items regardless of date (no date filter in the UI), so this guarantees visibility.
-  const todayDate = new Date();
-  todayDate.setHours(0, 1, 0, 0);
+
 
   const revisionSeeds = [
     {
@@ -263,7 +262,7 @@ const run = async () => {
     await addDoc(collection(db, 'users', uid, 'revisionQueue'), {
       questionId: rev.qId || `mock_qid_${Math.random()}`,
       questionTitle: rev.title,
-      scheduledFor: todayDate.toISOString(),
+      scheduledFor: new Date().toISOString(),
       status: rev.status,
       reason: rev.reason,
       createdAt: serverTimestamp(),
