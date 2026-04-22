@@ -114,7 +114,8 @@ export function subscribeToRevisionQueue(userId, callback) {
   // Sorting is done client-side in Revision.jsx instead to avoid that requirement.
   const q = query(
     collection(db, 'users', userId, 'revisionQueue'),
-    where('status', 'in', ['pending', 'snoozed']),
+    where('status', '==', 'pending'),
+    where('scheduledFor', '<=', new Date().toISOString())
   )
   return onSnapshot(q, (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
 }
