@@ -27,6 +27,9 @@ The Chrome extension removes friction. The AI mentor removes isolation. The grou
 4. `npm run dev`
 5. Open `http://localhost:5174`
 
+               OR
+Open "https://grind-sync-seven.vercel.app" login using demo@grindsync.com and Demo@123
+
 ## Core Features Implemented
 
 ### 1. Spaced Repetition System ✅
