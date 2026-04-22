@@ -44,7 +44,7 @@ export default function Revision() {
     const q = questions.find((item) => item.id === queueItem.questionId)
     if (!q) return
     const timeTaken = Number(timeByQueueId[queueItem.id] || q.revision?.averageTimeMins || 20)
-    await dismiss(queueItem.id, () => markRevised(q, feeling, timeTaken))
+    await dismiss(queueItem.id, () => markRevised(q, feeling, timeTaken, queueItem.id))
   }, [questions, timeByQueueId, dismiss, markRevised])
 
   const handleSnooze = useCallback(async (queueItem) => {

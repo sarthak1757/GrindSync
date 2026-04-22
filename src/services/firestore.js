@@ -119,7 +119,8 @@ export function subscribeToRevisionQueue(userId, callback) {
   return onSnapshot(q, (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
 }
 
-export async function updateQuestionRevision(userId, questionId, outcome) {
+// queueId: the exact revisionQueue document ID being completed (avoids compound query + index)
+export async function updateQuestionRevision(userId, questionId, outcome, queueId) {
   const questionRef = doc(db, 'users', userId, 'questions', questionId)
   const snap = await getDoc(questionRef)
   const question = snap.exists() ? snap.data() : null
@@ -145,18 +146,9 @@ export async function updateQuestionRevision(userId, questionId, outcome) {
     updatedAt: serverTimestamp(),
   })
 
-  const queueSnapshot = await getDocs(
-    query(
-      collection(db, 'users', userId, 'revisionQueue'),
-      where('questionId', '==', questionId),
-      where('status', 'in', ['pending', 'snoozed']),
-      limit(1),
-    ),
-  )
-
-  if (!queueSnapshot.empty) {
-    const queueDoc = queueSnapshot.docs[0]
-    await updateDoc(doc(db, 'users', userId, 'revisionQueue', queueDoc.id), {
+  // Direct update by document ID — no compound query needed, no composite index required
+  if (queueId) {
+    await updateDoc(doc(db, 'users', userId, 'revisionQueue', queueId), {
       status: 'done',
       completedAt: serverTimestamp(),
     })

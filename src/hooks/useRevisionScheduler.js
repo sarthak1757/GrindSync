@@ -8,7 +8,7 @@ export function useRevisionScheduler() {
   const { currentUser } = useAuth()
 
   const markRevised = useCallback(
-    async (question, feelingAfterRevision, timeTakenMins) => {
+    async (question, feelingAfterRevision, timeTakenMins, queueId) => {
       if (!currentUser) return
       const outcome = calculateNextRevision(question, feelingAfterRevision, timeTakenMins)
       await updateQuestionRevision(currentUser.uid, question.id, {
@@ -16,7 +16,7 @@ export function useRevisionScheduler() {
         feelingAfterRevision,
         latestTimeTakenMins: Number(timeTakenMins || 0),
         status: 'done',
-      })
+      }, queueId)
       toast.success('Revision updated')
       return outcome
     },
