@@ -10,6 +10,10 @@ GrindSync fixes this by bringing neuroscience-backed spaced repetition to coding
 
 The Chrome extension removes friction. The AI mentor removes isolation. The group challenges remove the loneliness of solo prep. Together, they turn grinding into growth.
 
+## 🎬 Demo Workflow
+
+![GrindSync Extension Demo](public/Grindsync-Extension-demo.gif)
+
 ## Demo Account (For Evaluation)
 
 **Email:** `demo@grindsync.com`  
