@@ -97,7 +97,7 @@ export async function addQuestionForUser(userId, payload) {
   await addDoc(collection(db, 'users', userId, 'revisionQueue'), {
     questionId: questionRef.id,
     questionTitle: question.title,
-    scheduledFor: nextRevisionDate.toISOString(),
+    scheduledFor: nextRevisionDate,
     status: 'pending',
     reason: 'Newly solved question needs reinforcement in 3 days.',
     createdAt: serverTimestamp(),
@@ -115,7 +115,7 @@ export function subscribeToRevisionQueue(userId, callback) {
   const q = query(
     collection(db, 'users', userId, 'revisionQueue'),
     where('status', '==', 'pending'),
-    where('scheduledFor', '<=', new Date().toISOString())
+    where('scheduledFor', '<=', new Date())
   )
   return onSnapshot(q, (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
 }
@@ -158,7 +158,7 @@ export async function updateQuestionRevision(userId, questionId, outcome, queueI
   await addDoc(collection(db, 'users', userId, 'revisionQueue'), {
     questionId,
     questionTitle: question?.title || 'Question',
-    scheduledFor: outcome.nextRevisionDate,
+    scheduledFor: new Date(outcome.nextRevisionDate),
     status: 'pending',
     reason:
       outcome.feelingAfterRevision === 'hard'
@@ -173,12 +173,14 @@ export async function snoozeRevisionQueueItem(userId, queueId) {
   const snap = await getDoc(queueRef)
   if (!snap.exists()) return
 
-  const scheduled = snap.data().scheduledFor ? new Date(snap.data().scheduledFor) : new Date()
+  const scheduled = snap.data().scheduledFor?.toDate 
+    ? snap.data().scheduledFor.toDate() 
+    : (snap.data().scheduledFor ? new Date(snap.data().scheduledFor) : new Date())
   scheduled.setDate(scheduled.getDate() + 1)
 
   await updateDoc(queueRef, {
     status: 'snoozed',
-    scheduledFor: scheduled.toISOString(),
+    scheduledFor: scheduled,
     reason: 'Snoozed for 1 day by user.',
   })
 }

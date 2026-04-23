@@ -60,7 +60,11 @@ export default function Revision() {
             (item.status === 'pending' || item.status === 'snoozed') &&
             !dismissedRef.current.has(item.id),
         )
-        .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()),
+        .sort((a, b) => {
+          const dateA = a.scheduledFor?.toDate ? a.scheduledFor.toDate() : new Date(a.scheduledFor)
+          const dateB = b.scheduledFor?.toDate ? b.scheduledFor.toDate() : new Date(b.scheduledFor)
+          return dateA.getTime() - dateB.getTime()
+        }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [revisionQueue, dismissedIds], // dismissedIds triggers re-memo when set changes
   )
@@ -113,7 +117,7 @@ export default function Revision() {
                   </p>
                 </div>
                 <span className="shrink-0 text-xs text-zinc-500">
-                  Due: {item.scheduledFor ? new Date(item.scheduledFor).toLocaleDateString() : 'Today'}
+                  Due: {item.scheduledFor ? (item.scheduledFor?.toDate ? item.scheduledFor.toDate() : new Date(item.scheduledFor)).toLocaleDateString() : 'Today'}
                 </span>
               </div>
 
