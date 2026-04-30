@@ -28,7 +28,6 @@ export default function ChallengeEditorModal({ open, onClose, challenge, started
   useEffect(() => {
     if (!open || !challenge || !startedAt) return
 
-    setElapsedSecs(Math.floor((Date.now() - startedAt) / 1000))
     const interval = setInterval(() => {
       setElapsedSecs(Math.floor((Date.now() - startedAt) / 1000))
     }, 1000)

@@ -5,16 +5,18 @@ import ChallengeModal from '../components/challenges/ChallengeModal'
 import ChallengeEditorModal from '../components/challenges/ChallengeEditorModal'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
+import EmptyState from '../components/ui/EmptyState'
 import { useAuth } from '../context/AuthContext'
 import { useGroups } from '../context/GroupContext'
 import { createChallenge, deleteChallenge } from '../services/firestore'
-import { Trophy, Medal } from 'lucide-react'
+import { Trophy, Medal, Swords, Users, Activity } from 'lucide-react'
 
 export default function Challenges() {
   const { currentUser } = useAuth()
   const { challenges, groups } = useGroups()
   const [open, setOpen] = useState(false)
   const [activeSolveChallenge, setActiveSolveChallenge] = useState(null)
+  const [activeSolveStartedAt, setActiveSolveStartedAt] = useState(null)
   const prevChallengesRef = useRef({})
   // Persists start time per challenge so closing/reopening modal doesn't reset timer
   const solveStartTimesRef = useRef({})
@@ -25,6 +27,7 @@ export default function Challenges() {
     if (!solveStartTimesRef.current[challenge.id]) {
       solveStartTimesRef.current[challenge.id] = Date.now()
     }
+    setActiveSolveStartedAt(solveStartTimesRef.current[challenge.id])
     setActiveSolveChallenge(challenge)
   }
 
@@ -178,9 +181,13 @@ export default function Challenges() {
       </div>
 
       {!friendOptions.length && (
-        <Card>
-          <p className="text-sm text-zinc-400">Join a group with friends first, then you can challenge them here.</p>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title="Find your coding rivals"
+          message="Join a group with friends first, then you can send timed challenges and build a head-to-head record."
+          actionLabel="Browse Groups"
+          onAction={() => window.location.assign('/groups')}
+        />
       )}
 
       {/* ── Live Leaderboard ── */}
@@ -191,7 +198,13 @@ export default function Challenges() {
           <span className="ml-auto text-xs text-zinc-500">{completed.length} match{completed.length !== 1 ? 'es' : ''} played</span>
         </div>
         {!leaderboard.length ? (
-          <p className="text-sm text-zinc-400">No completed matches yet. Be the first to win!</p>
+          <EmptyState
+            icon={Trophy}
+            title="Leaderboard is waiting"
+            message="Finish your first challenge and this board will light up with wins, draws, and points."
+            actionLabel="Send Challenge"
+            onAction={() => setOpen(true)}
+          />
         ) : (
           <div className="space-y-2">
             {leaderboard.map((player, idx) => (
@@ -228,7 +241,15 @@ export default function Challenges() {
 
       <Card title="Active Challenges">
         <div className="space-y-2">
-          {active.length === 0 && <p className="text-sm text-zinc-400">No active challenges.</p>}
+          {active.length === 0 && (
+            <EmptyState
+              icon={Swords}
+              title="No active duels"
+              message="Send a friend a problem and start the timer when you are both ready."
+              actionLabel="Create Challenge"
+              onAction={() => setOpen(true)}
+            />
+          )}
           {active.map((c) => (
             <ChallengeCard key={c.id} challenge={c} onSolve={handleOpenSolve} onDelete={handleDeleteChallenge} onViewQuestion={handleViewQuestion} />
           ))}
@@ -237,7 +258,15 @@ export default function Challenges() {
 
       <Card title="Completed Challenges">
         <div className="space-y-2">
-          {completed.length === 0 && <p className="text-sm text-zinc-400">No completed challenges yet.</p>}
+          {completed.length === 0 && (
+            <EmptyState
+              icon={Activity}
+              title="No finished challenges yet"
+              message="Completed matches will appear here with outcomes, timings, and bragging rights."
+              actionLabel="Start a Match"
+              onAction={() => setOpen(true)}
+            />
+          )}
           {completed.map((c) => (
             <ChallengeCard key={c.id} challenge={c} onDelete={handleDeleteChallenge} />
           ))}
@@ -246,7 +275,13 @@ export default function Challenges() {
 
       <Card title="My Head-to-Head Record">
         {!headToHead.length ? (
-          <p className="text-sm text-zinc-400">No completed matches yet.</p>
+          <EmptyState
+            icon={Medal}
+            title="No rival history yet"
+            message="Once you complete challenges, your best matchups and records will show up here."
+            actionLabel="Challenge Someone"
+            onAction={() => setOpen(true)}
+          />
         ) : (
           <div className="space-y-2">
             {headToHead.map((record) => (
@@ -270,9 +305,12 @@ export default function Challenges() {
       />
       <ChallengeEditorModal
         open={!!activeSolveChallenge}
-        onClose={() => setActiveSolveChallenge(null)}
+        onClose={() => {
+          setActiveSolveChallenge(null)
+          setActiveSolveStartedAt(null)
+        }}
         challenge={activeSolveChallenge}
-        startedAt={activeSolveChallenge ? (solveStartTimesRef.current[activeSolveChallenge.id] ?? Date.now()) : null}
+        startedAt={activeSolveStartedAt}
       />
     </div>
   )
