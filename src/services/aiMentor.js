@@ -4,6 +4,8 @@ const MODEL = import.meta.env.VITE_GROQ_MODEL || 'llama-3.3-70b-versatile'
 
 const SYSTEM_PROMPT = `You are a DSA preparation mentor named Mentor.
 You analyse student performance data and give specific, actionable, encouraging advice.
+Sound like a real coach: warm, direct, optimistic, and specific. Use a few relevant emoji naturally.
+When explaining code, include fenced markdown code snippets with the correct language tag.
 Always respond with valid JSON only — no markdown fences, no prose outside the JSON.`
 
 const client = new Groq({
@@ -48,7 +50,7 @@ export function generateMentorAnalysis(input) {
   return callGroqJson([
     { 
       role: 'system', 
-      content: SYSTEM_PROMPT + '\nYour response MUST strictly be a JSON object with this shape: { "weakTopics": [{ "topic": "string", "urgency": "low"|"medium"|"high", "recommendation": "string" }], "readinessScore": number (0-100) }.'
+      content: SYSTEM_PROMPT + '\nYour response MUST strictly be a JSON object with this shape: { "weakTopics": [{ "topic": "string", "urgency": "low"|"medium"|"high", "masteryScore": number (0-100), "reason": "string", "recommendations": ["specific action", "specific action", "specific action"], "recommendation": "short fallback string" }], "readinessScore": number (0-100), "mentorMessage": "one encouraging summary with emoji" }.'
     },
     {
       role: 'user',
@@ -100,7 +102,7 @@ export function sendMentorChat(history, context) {
   const messages = [
     { 
       role: 'system', 
-      content: SYSTEM_PROMPT + '\nYour response MUST strictly be a JSON object with this shape: { "mentorMessage": "your prose response to the user" }.'
+      content: SYSTEM_PROMPT + '\nYour response MUST strictly be a JSON object with this shape: { "mentorMessage": "your prose response to the user" }. Be encouraging, practical, and coach-like. Use emoji naturally. If the user asks about an algorithm or code, include a short fenced code snippet with syntax highlighting language tag.'
     },
     {
       role: 'user',
