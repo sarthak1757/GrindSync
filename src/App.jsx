@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import AppShell from './components/layout/AppShell'
+import RouteLoadingBar from './components/layout/RouteLoadingBar'
 import Loader from './components/ui/Loader'
 import ErrorBoundary from './components/ui/ErrorBoundary'
 import { useAuth } from './context/AuthContext'
@@ -27,6 +28,7 @@ function RootRoute() {
 export default function App() {
   return (
     <ErrorBoundary>
+      <RouteLoadingBar />
       <Suspense fallback={<Loader label="Loading page" fullScreen />}>
         <Routes>
           <Route path="/" element={<RootRoute />} />
@@ -52,7 +54,13 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: 'grindsync-toast',
+          duration: 3500,
+        }}
+      />
     </ErrorBoundary>
   )
 }

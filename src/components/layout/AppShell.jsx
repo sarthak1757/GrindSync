@@ -1,17 +1,20 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Navbar from './Navbar'
-import Sidebar from './Sidebar'
+import BottomNav from './BottomNav'
 
 export default function AppShell() {
+  const location = useLocation()
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen bg-black text-zinc-100">
       <Navbar />
-      <div className="mx-auto flex max-w-7xl flex-col md:flex-row">
-        <Sidebar />
-        <main className="min-h-[calc(100vh-64px)] flex-1 p-4 md:p-6">
-          <Outlet />
-        </main>
-      </div>
+      <main
+        key={location.pathname}
+        className="mx-auto min-h-screen max-w-7xl px-4 pt-20 pb-24 animate-fade-in md:pb-8"
+      >
+        <Outlet />
+      </main>
+      <BottomNav />
     </div>
   )
 }

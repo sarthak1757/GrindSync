@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { Flame, Medal, Target, Zap, Clock, Star, Trophy, Activity, Calendar as CalendarIcon, Edit2, Check, X } from 'lucide-react'
 import CalendarHeatmap from 'react-calendar-heatmap'
@@ -7,7 +7,7 @@ import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import { format } from 'date-fns'
 
 import Card from '../components/ui/Card'
-import Modal from '../components/ui/Modal'
+import EmptyState from '../components/ui/EmptyState'
 import { useAuth } from '../context/AuthContext'
 import { useQuestions } from '../context/QuestionContext'
 import { useGroups } from '../context/GroupContext'
@@ -32,10 +32,11 @@ export default function Profile() {
   const { challenges } = useGroups()
 
   const stats = useProfileStats(questions, challenges, currentUser)
-  
+
   // Modal State for Heatmap Click
   const [selectedDate, setSelectedDate] = useState(null)
-  
+  const [isHeatmapModalClosing, setIsHeatmapModalClosing] = useState(false)
+
   const getQuestionsForDate = (dateStr) => {
     const solvedThatDay = []
     questions.forEach(q => {
@@ -46,6 +47,7 @@ export default function Profile() {
         if (format(hDate, 'yyyy-MM-dd') === dateStr) {
           solvedThatDay.push({
             title: q.title,
+            url: q.url,
             difficulty: q.difficulty,
             time: h.timeTakenMins,
             id: q.id
@@ -61,9 +63,41 @@ export default function Profile() {
     setSelectedDate(value.date)
   }
 
+  const closeHeatmapModal = useCallback(() => {
+    if (!selectedDate || isHeatmapModalClosing) return
+    setIsHeatmapModalClosing(true)
+    window.setTimeout(() => {
+      setSelectedDate(null)
+      setIsHeatmapModalClosing(false)
+    }, 180)
+  }, [isHeatmapModalClosing, selectedDate])
+
+  useEffect(() => {
+    if (!selectedDate) return undefined
+
+    const previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') closeHeatmapModal()
+    }
+
+    window.addEventListener('keydown', handleEsc)
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [closeHeatmapModal, selectedDate])
+
+  const selectedQuestions = selectedDate ? getQuestionsForDate(selectedDate) : []
+  const selectedDateLabel = selectedDate
+    ? format(new Date(`${selectedDate}T00:00:00`), 'MMMM d, yyyy')
+    : ''
+  const heatmapSolvedCount = stats.heatmapData.reduce((sum, day) => sum + (Number(day.count) || 0), 0)
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
-      
+
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-zinc-800 pb-4">
         <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xl font-bold text-white shadow-lg">
@@ -85,7 +119,7 @@ export default function Profile() {
                       await updateUsername(newName.trim());
                       setIsEditingName(false);
                       toast.success("Username updated!");
-                    } catch (err) {
+                    } catch {
                       toast.error("Failed to update username.");
                     }
                   } else if (e.key === 'Escape') {
@@ -93,22 +127,22 @@ export default function Profile() {
                   }
                 }}
               />
-              <button 
+              <button
                 onClick={async () => {
-                   if (!newName.trim()) return;
-                   try {
-                     await updateUsername(newName.trim());
-                     setIsEditingName(false);
-                     toast.success("Username updated!");
-                   } catch (err) {
-                     toast.error("Failed to update username.");
-                   }
+                  if (!newName.trim()) return;
+                  try {
+                    await updateUsername(newName.trim());
+                    setIsEditingName(false);
+                    toast.success("Username updated!");
+                  } catch {
+                    toast.error("Failed to update username.");
+                  }
                 }}
                 className="p-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded"
               >
                 <Check className="w-4 h-4" />
               </button>
-              <button 
+              <button
                 onClick={() => setIsEditingName(false)}
                 className="p-1.5 bg-zinc-800 text-zinc-400 hover:bg-zinc-700 rounded"
               >
@@ -118,7 +152,7 @@ export default function Profile() {
           ) : (
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold text-zinc-100">{currentUser?.displayName || 'Grinder'}</h1>
-              <button 
+              <button
                 onClick={() => {
                   setNewName(currentUser?.displayName || 'Grinder');
                   setIsEditingName(true);
@@ -141,7 +175,7 @@ export default function Profile() {
           <p className="text-sm font-medium text-zinc-400">Total Solved</p>
           <p className="text-3xl font-bold text-zinc-100">{stats.totalSolved}</p>
         </Card>
-        
+
         <Card className="flex flex-col items-center justify-center p-6 bg-zinc-900/50 border-zinc-800/80">
           <Flame className={`w-8 h-8 mb-2 ${stats.currentStreak > 0 ? 'text-orange-500' : 'text-zinc-600'}`} />
           <p className="text-sm font-medium text-zinc-400">Current Streak</p>
@@ -171,7 +205,8 @@ export default function Profile() {
       {/* SOLVE HISTORY CALENDAR */}
       <Card title="Solve History" className="bg-zinc-900/40">
         <div className="px-2 py-4 overflow-x-auto relative">
-          <style dangerouslySetInnerHTML={{__html: `
+          <style dangerouslySetInnerHTML={{
+            __html: `
             .react-calendar-heatmap text { font-size: 8px; fill: #71717a; }
             .react-calendar-heatmap .color-empty { fill: #27272a; }
             .react-calendar-heatmap .color-scale-1 { fill: #4f46e5; opacity: 0.4; }
@@ -181,29 +216,32 @@ export default function Profile() {
             .react-calendar-heatmap rect:hover { stroke: #e4e4e7; stroke-width: 1px; cursor: pointer; }
           `}} />
           <div className="min-w-[700px]">
-             <CalendarHeatmap
-                startDate={stats.heatmapData[0]?.date || new Date()}
-                endDate={new Date()}
-                values={stats.heatmapData}
-                classForValue={(value) => {
-                  if (!value || value.count === 0) return 'color-empty'
-                  if (value.count <= 2) return 'color-scale-1'
-                  if (value.count <= 4) return 'color-scale-2'
-                  if (value.count <= 6) return 'color-scale-3'
-                  return 'color-scale-4'
-                }}
-                titleForValue={(value) => {
-                  if (!value || !value.date) return 'No activity'
-                  return `${value.count} problems solved on ${value.date}`
-                }}
-                onClick={handleHeatmapClick}
-              />
+            <CalendarHeatmap
+              startDate={stats.heatmapData[0]?.date || new Date()}
+              endDate={new Date()}
+              values={stats.heatmapData}
+              classForValue={(value) => {
+                if (!value || value.count === 0) return 'color-empty'
+                if (value.count <= 2) return 'color-scale-1'
+                if (value.count <= 4) return 'color-scale-2'
+                if (value.count <= 6) return 'color-scale-3'
+                return 'color-scale-4'
+              }}
+              titleForValue={(value) => {
+                if (!value || !value.date) return 'No activity'
+                return `${value.count} problems solved on ${value.date}`
+              }}
+              onClick={handleHeatmapClick}
+            />
+            <p className="mt-4 text-sm font-semibold text-zinc-200">
+              {heatmapSolvedCount} problem{heatmapSolvedCount === 1 ? '' : 's'} solved this year
+            </p>
           </div>
         </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* TOPIC MASTERY BREAKDOWN */}
         <Card title="Topic Mastery Breakdown" className="bg-zinc-900/40">
           <div className="space-y-4 mt-2">
@@ -229,13 +267,12 @@ export default function Profile() {
         <Card title="Achievements" className="bg-zinc-900/40">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
             {stats.badges.map((badge) => (
-              <div 
-                key={badge.id} 
-                className={`p-3 rounded-xl border flex flex-col items-center text-center transition-all ${
-                  badge.unlocked 
-                  ? 'border-indigo-500/30 bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.1)]' 
-                  : 'border-zinc-800 bg-zinc-900/30 opacity-50 grayscale'
-                }`}
+              <div
+                key={badge.id}
+                className={`p-3 rounded-xl border flex flex-col items-center text-center transition-all ${badge.unlocked
+                    ? 'border-indigo-500/30 bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.1)]'
+                    : 'border-zinc-800 bg-zinc-900/30 opacity-50 grayscale'
+                  }`}
               >
                 <div className={`p-2 rounded-full mb-2 ${badge.unlocked ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-800 text-zinc-500'}`}>
                   {ICONS[badge.icon]}
@@ -249,11 +286,17 @@ export default function Profile() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* TOPIC PIE CHART */}
         <Card title="Problem Distribution" className="bg-zinc-900/40 lg:col-span-1 min-h-[300px]">
           {!stats.topicMastery.length ? (
-            <p className="text-sm text-zinc-500 mt-4">No data available.</p>
+            <EmptyState
+              icon={Activity}
+              title="No distribution yet"
+              message="Log a few solved questions and this chart will show where your practice time is going."
+              actionLabel="Add Questions"
+              onAction={() => window.location.assign('/questions')}
+            />
           ) : (
             <div className="h-64 w-full mt-4 -ml-4">
               <ResponsiveContainer width="100%" height="100%">
@@ -270,11 +313,11 @@ export default function Profile() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#f4f4f5', borderRadius: '8px' }}
                     itemStyle={{ color: '#e4e4e7' }}
                   />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }}/>
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -283,69 +326,125 @@ export default function Profile() {
 
         {/* PERFORMANCE TRENDS */}
         <Card title="30-Day Performance Trends" className="bg-zinc-900/40 lg:col-span-2 min-h-[300px]">
-           <div className="h-64 w-full mt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.trendData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                  <XAxis dataKey="date" stroke="#71717a" fontSize={11} tickMargin={10} minTickGap={20} />
-                  <YAxis yAxisId="left" stroke="#10b981" fontSize={11} />
-                  <YAxis yAxisId="right" orientation="right" stroke="#6366f1" fontSize={11} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }}
-                    labelStyle={{ color: '#a1a1aa', marginBottom: '4px' }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                  <Line yAxisId="left" type="monotone" name="Avg Time (mins)" dataKey="avgSolveTime" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  <Line yAxisId="right" type="step" name="Questions Solved" dataKey="questionsSolved" stroke="#6366f1" strokeWidth={2} dot={false} fill="#6366f1" fillOpacity={0.2} />
-                </LineChart>
-              </ResponsiveContainer>
-           </div>
+          <div className="h-64 w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.trendData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                <XAxis dataKey="date" stroke="#71717a" fontSize={11} tickMargin={10} minTickGap={20} />
+                <YAxis yAxisId="left" stroke="#10b981" fontSize={11} />
+                <YAxis yAxisId="right" orientation="right" stroke="#6366f1" fontSize={11} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px' }}
+                  labelStyle={{ color: '#a1a1aa', marginBottom: '4px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                <Line yAxisId="left" type="monotone" name="Avg Time (mins)" dataKey="avgSolveTime" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                <Line yAxisId="right" type="step" name="Questions Solved" dataKey="questionsSolved" stroke="#6366f1" strokeWidth={2} dot={false} fill="#6366f1" fillOpacity={0.2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </Card>
       </div>
 
       {/* RECENT ACTIVITY FEED */}
       <Card title="Recent Activity" className="bg-zinc-900/40">
         <div className="space-y-4 mt-2">
-          {!stats.recentActivity.length && <p className="text-sm text-zinc-500">No recent activity found.</p>}
+          {!stats.recentActivity.length && (
+            <EmptyState
+              icon={CalendarIcon}
+              title="No activity recorded yet"
+              message="Your solved problems, revisions, and challenge wins will appear here as soon as you start logging work."
+              actionLabel="Log First Problem"
+              onAction={() => window.location.assign('/questions')}
+            />
+          )}
           {stats.recentActivity.map((activity) => (
-             <div key={activity.id} className="flex gap-4 items-start relative pb-4 last:pb-0">
-                <div className="absolute left-[15px] top-8 bottom-0 w-[2px] bg-zinc-800 last:hidden"></div>
-                <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-zinc-900 ${
-                  activity.type === 'challenge' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'
+            <div key={activity.id} className="flex gap-4 items-start relative pb-4 last:pb-0">
+              <div className="absolute left-[15px] top-8 bottom-0 w-[2px] bg-zinc-800 last:hidden"></div>
+              <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-zinc-900 ${activity.type === 'challenge' ? 'bg-amber-500/20 text-amber-400' : 'bg-indigo-500/20 text-indigo-400'
                 }`}>
-                  {activity.type === 'challenge' ? <Trophy className="w-4 h-4" /> : <Star className="w-4 h-4" />}
-                </div>
-                <div className="pt-1.5">
-                  <p className="text-sm text-zinc-200">{activity.title}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    {format(activity.timestamp, 'MMM d, yyyy • h:mm a')}
-                  </p>
-                </div>
-             </div>
+                {activity.type === 'challenge' ? <Trophy className="w-4 h-4" /> : <Star className="w-4 h-4" />}
+              </div>
+              <div className="pt-1.5">
+                <p className="text-sm text-zinc-200">{activity.title}</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {format(activity.timestamp, 'MMM d, yyyy • h:mm a')}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
       </Card>
 
       {/* HEATMAP MODAL */}
-      <Modal open={!!selectedDate} onClose={() => setSelectedDate(null)} title={`Activity on ${selectedDate}`}>
-        <div className="space-y-3 pb-4">
-          {selectedDate && getQuestionsForDate(selectedDate).length > 0 ? (
-            getQuestionsForDate(selectedDate).map((q, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-zinc-800 bg-zinc-900/50">
-                <div>
-                  <p className="text-sm font-medium text-emerald-400">{q.title}</p>
-                  <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wider">{q.difficulty}</p>
+      {selectedDate && (
+        <div
+          className={`fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm ${
+            isHeatmapModalClosing ? 'animate-modal-backdrop-out' : 'animate-modal-backdrop'
+          }`}
+          onClick={closeHeatmapModal}
+        >
+          <div
+            className={`relative flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-zinc-700 bg-gray-900 p-6 pt-16 shadow-2xl shadow-black/70 ${
+              isHeatmapModalClosing ? 'animate-modal-panel-out' : 'animate-modal-panel'
+            }`}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="heatmap-modal-title"
+          >
+            <button
+              type="button"
+              onClick={closeHeatmapModal}
+              aria-label="Close activity details"
+              className="absolute right-4 top-4 z-[90] flex h-12 w-12 min-h-12 items-center justify-center rounded-full border border-zinc-600 bg-zinc-800 text-zinc-100 shadow-lg shadow-black/40 transition-all hover:border-zinc-400 hover:bg-zinc-700 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 active:scale-95"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            <h3 id="heatmap-modal-title" className="mb-4 pr-10 text-xl font-bold text-zinc-100">
+              {selectedDateLabel} - {selectedQuestions.length} problem{selectedQuestions.length === 1 ? '' : 's'} solved
+            </h3>
+
+            <div className="dark-scrollbar min-h-0 max-h-[56vh] space-y-3 overflow-y-auto pr-2 pb-2">
+              {selectedQuestions.length > 0 ? (
+                selectedQuestions.map((q, i) => (
+                  <div key={q.id || i} className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950/60 p-3">
+                    <div>
+                      {q.url ? (
+                        <a
+                          href={q.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-emerald-400 transition hover:text-emerald-300 hover:underline"
+                        >
+                          {q.title}
+                        </a>
+                      ) : (
+                        <p className="text-sm font-medium text-emerald-400">{q.title}</p>
+                      )}
+                      <p className="mt-1 text-xs uppercase tracking-wider text-zinc-500">{q.difficulty}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono text-lg text-zinc-300">{q.time}<span className="text-sm text-zinc-500">m</span></p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
+                  <EmptyState
+                    icon={CalendarIcon}
+                    title="Quiet day"
+                    message="No questions were recorded on this date. Pick a problem today and the heatmap will start filling in."
+                    actionLabel="Add Question"
+                    onAction={() => window.location.assign('/questions')}
+                  />
                 </div>
-                <div className="text-right">
-                   <p className="text-lg font-mono text-zinc-300">{q.time}<span className="text-sm text-zinc-500">m</span></p>
-                </div>
-              </div>
-            ))
-          ) : (
-             <p className="text-sm text-zinc-400 italic">No questions were recorded on this day.</p>
-          )}
+              )}
+            </div>
+          </div>
         </div>
-      </Modal>
+      )}
 
       {/* DANGER ZONE */}
       <Card title="Danger Zone" className="bg-red-950/20 border-red-900/30">
@@ -354,7 +453,7 @@ export default function Profile() {
             <p className="text-sm font-medium text-red-400">Delete Account</p>
             <p className="text-xs text-red-200/50 mt-1">Once you delete your account, there is no going back. Please be certain.</p>
           </div>
-          <button 
+          <button
             disabled={isDeleting}
             className="px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 text-sm font-medium rounded-lg border border-red-500/30 transition-colors whitespace-nowrap"
             onClick={async () => {

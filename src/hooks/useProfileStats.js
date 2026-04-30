@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { startOfDay, format, differenceInDays, subDays } from 'date-fns'
+import { format, differenceInDays, subDays } from 'date-fns'
 
 export function useProfileStats(questions = [], challenges = [], currentUser) {
   return useMemo(() => {
