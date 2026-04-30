@@ -10,6 +10,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
   deleteDoc,
@@ -63,11 +64,14 @@ export async function saveStudyPlan(userId, planData) {
 }
 
 export async function addQuestionForUser(userId, payload) {
-  const solvedAt = payload.solvedAt || new Date().toISOString()
+  const solvedAtTimestamp = payload.solvedAt
+    ? Timestamp.fromDate(new Date(payload.solvedAt))
+    : Timestamp.now()
   const timeTakenMins = Number(payload.timeTakenMins || 30)
   const intervalDays = 3
-  const nextRevisionDate = new Date(solvedAt)
+  const nextRevisionDate = solvedAtTimestamp.toDate()
   nextRevisionDate.setDate(nextRevisionDate.getDate() + intervalDays)
+  const nextRevisionTimestamp = Timestamp.fromDate(nextRevisionDate)
 
   const question = {
     title: payload.title,
@@ -77,14 +81,14 @@ export async function addQuestionForUser(userId, payload) {
     difficulty: normalizeDifficulty(payload.platform, payload.difficulty),
     solveHistory: [
       {
-        solvedAt,
+        solvedAt: solvedAtTimestamp,
         timeTakenMins,
         felt: payload.felt || 'okay',
         notes: payload.notes || '',
       },
     ],
     revision: {
-      nextRevisionDate: nextRevisionDate.toISOString(),
+      nextRevisionDate: nextRevisionTimestamp,
       intervalDays,
       totalAttempts: 1,
       averageTimeMins: timeTakenMins,
@@ -97,7 +101,7 @@ export async function addQuestionForUser(userId, payload) {
   await addDoc(collection(db, 'users', userId, 'revisionQueue'), {
     questionId: questionRef.id,
     questionTitle: question.title,
-    scheduledFor: nextRevisionDate,
+    scheduledFor: nextRevisionTimestamp,
     status: 'pending',
     reason: 'Newly solved question needs reinforcement in 3 days.',
     createdAt: serverTimestamp(),
@@ -115,7 +119,7 @@ export function subscribeToRevisionQueue(userId, callback) {
   const q = query(
     collection(db, 'users', userId, 'revisionQueue'),
     where('status', '==', 'pending'),
-    where('scheduledFor', '<=', new Date())
+    where('scheduledFor', '<=', Timestamp.now())
   )
   return onSnapshot(q, (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))))
 }
@@ -128,13 +132,14 @@ export async function updateQuestionRevision(userId, questionId, outcome, queueI
   const nextHistory = [
     ...(question?.solveHistory || []),
     {
-      solvedAt: new Date().toISOString(),
+      solvedAt: Timestamp.now(),
       timeTakenMins: outcome.latestTimeTakenMins || outcome.averageTimeMins || 0,
       felt: outcome.appliedGrade || outcome.feelingAfterRevision || 'okay',
       notes: outcome.notes || '',
     },
   ]
 
+  // outcome.nextRevisionDate is already a Firestore Timestamp (from revisionAlgorithm.js)
   await updateDoc(doc(db, 'users', userId, 'questions', questionId), {
     revision: {
       intervalDays: outcome.newInterval,
@@ -158,7 +163,7 @@ export async function updateQuestionRevision(userId, questionId, outcome, queueI
   await addDoc(collection(db, 'users', userId, 'revisionQueue'), {
     questionId,
     questionTitle: question?.title || 'Question',
-    scheduledFor: new Date(outcome.nextRevisionDate),
+    scheduledFor: outcome.nextRevisionDate, // already a Firestore Timestamp
     status: 'pending',
     reason:
       outcome.feelingAfterRevision === 'hard'
@@ -173,14 +178,14 @@ export async function snoozeRevisionQueueItem(userId, queueId) {
   const snap = await getDoc(queueRef)
   if (!snap.exists()) return
 
-  const scheduled = snap.data().scheduledFor?.toDate 
-    ? snap.data().scheduledFor.toDate() 
+  const scheduled = snap.data().scheduledFor?.toDate
+    ? snap.data().scheduledFor.toDate()
     : (snap.data().scheduledFor ? new Date(snap.data().scheduledFor) : new Date())
   scheduled.setDate(scheduled.getDate() + 1)
 
   await updateDoc(queueRef, {
     status: 'snoozed',
-    scheduledFor: scheduled,
+    scheduledFor: Timestamp.fromDate(scheduled),
     reason: 'Snoozed for 1 day by user.',
   })
 }
@@ -196,7 +201,7 @@ export async function createGroup(user, payload) {
       displayName: user.displayName || user.email,
       photoURL: user.photoURL || '',
       role: 'admin',
-      joinedAt: new Date().toISOString(),
+      joinedAt: Timestamp.now(),
       weeklyStats: {
         questionsSolved: 0,
         revisionsCompleted: 0,
@@ -221,7 +226,7 @@ export async function joinGroupWithInviteCode(user, inviteCode) {
     displayName: user.displayName || user.email,
     photoURL: user.photoURL || '',
     role: 'member',
-    joinedAt: new Date().toISOString(),
+    joinedAt: Timestamp.now(),
     weeklyStats: {
       questionsSolved: 0,
       revisionsCompleted: 0,
@@ -259,7 +264,7 @@ export async function createChallenge(payload) {
     status: 'pending',
     winner: null,
     createdAt: serverTimestamp(),
-    startedAt: new Date().toISOString()
+    startedAt: Timestamp.now(),
   })
 }
 

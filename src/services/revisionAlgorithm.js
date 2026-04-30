@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore'
+
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
 export function calculateNextRevision(question, feelingAfterRevision, timeTaken) {
@@ -48,7 +50,7 @@ export function calculateNextRevision(question, feelingAfterRevision, timeTaken)
   return {
     newInterval: roundedInterval,
     masteryScore,
-    nextRevisionDate: next.toISOString(),
+    nextRevisionDate: Timestamp.fromDate(next),
     totalAttempts,
     averageTimeMins: Number(averageTimeMins.toFixed(1)),
     appliedGrade,

@@ -174,7 +174,7 @@ const run = async () => {
 
     const solveHistory = [
       {
-        solvedAt: solveDate.toISOString(),
+        solvedAt: Timestamp.fromDate(solveDate),
         timeTakenMins: timeMins,
         felt: pick(['easy', 'okay', 'hard']),
         notes: i < 5 ? 'Reviewed with mentor guidance.' : '',
@@ -184,7 +184,7 @@ const run = async () => {
     if (hasRevision && revisionDate) {
       const revTimeMins = rand(10, 45);
       solveHistory.push({
-        solvedAt: revisionDate.toISOString(),
+        solvedAt: Timestamp.fromDate(revisionDate),
         timeTakenMins: revTimeMins,
         felt: pick(['easy', 'okay']),
         notes: 'Spaced repetition revision.',
@@ -203,7 +203,7 @@ const run = async () => {
       difficulty: q.difficulty,
       solveHistory,
       revision: {
-        nextRevisionDate: nextRevDate.toISOString(),
+        nextRevisionDate: Timestamp.fromDate(nextRevDate),
         intervalDays: hasRevision ? rand(4, 12) : 3,
         totalAttempts,
         averageTimeMins: avgTime,
@@ -262,7 +262,7 @@ const run = async () => {
     await addDoc(collection(db, 'users', uid, 'revisionQueue'), {
       questionId: rev.qId || `mock_qid_${Math.random()}`,
       questionTitle: rev.title,
-      scheduledFor: new Date().toISOString(),
+      scheduledFor: Timestamp.now(),
       status: rev.status,
       reason: rev.reason,
       createdAt: serverTimestamp(),
@@ -285,7 +285,7 @@ const run = async () => {
         displayName: 'Demo Account',
         photoURL: '',
         role: 'admin',
-        joinedAt: daysAgo(21).toISOString(),
+        joinedAt: Timestamp.fromDate(daysAgo(21)),
         weeklyStats: { questionsSolved: 18, revisionsCompleted: 7, currentStreak: 5, challengesWon: 2, score: 450 },
       },
       {
@@ -293,7 +293,7 @@ const run = async () => {
         displayName: 'Alice Wang',
         photoURL: '',
         role: 'member',
-        joinedAt: daysAgo(20).toISOString(),
+        joinedAt: Timestamp.fromDate(daysAgo(20)),
         weeklyStats: { questionsSolved: 26, revisionsCompleted: 12, currentStreak: 14, challengesWon: 6, score: 830 },
       },
       {
@@ -301,7 +301,7 @@ const run = async () => {
         displayName: 'Bob Smith',
         photoURL: '',
         role: 'member',
-        joinedAt: daysAgo(18).toISOString(),
+        joinedAt: Timestamp.fromDate(daysAgo(18)),
         weeklyStats: { questionsSolved: 11, revisionsCompleted: 3, currentStreak: 2, challengesWon: 0, score: 195 },
       },
       {
@@ -309,7 +309,7 @@ const run = async () => {
         displayName: 'Charlie Dev',
         photoURL: '',
         role: 'member',
-        joinedAt: daysAgo(15).toISOString(),
+        joinedAt: Timestamp.fromDate(daysAgo(15)),
         weeklyStats: { questionsSolved: 16, revisionsCompleted: 5, currentStreak: 4, challengesWon: 1, score: 370 },
       },
     ],
@@ -364,8 +364,8 @@ const run = async () => {
       status: 'completed',
       winner: c.winner,
       createdAt: Timestamp.fromDate(cd),
-      startedAt: cd.toISOString(),
-      expiresAt: new Date(cd.getTime() + 60 * 60 * 1000).toISOString(),
+      startedAt: Timestamp.fromDate(cd),
+      expiresAt: Timestamp.fromDate(new Date(cd.getTime() + 60 * 60 * 1000)),
       challenger: {
         userId: uid,
         displayName: 'Demo Account',
@@ -450,7 +450,7 @@ const run = async () => {
         totalSolved: 30,
         currentStreak: 5,
         longestStreak: 12,
-        lastSolvedDate: new Date().toISOString(),
+        lastSolvedDate: Timestamp.now(),
         weakTopics: ['DP', 'Backtracking'],
         strongTopics: ['Arrays', 'Trees'],
       },

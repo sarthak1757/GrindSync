@@ -1,4 +1,7 @@
+/* global process */
 /**
+ * eslint-env node
+ *
  * cleanupRevisions.js
  *
  * 1. Signs in as the demo account
