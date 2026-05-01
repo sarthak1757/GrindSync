@@ -238,10 +238,6 @@ export default function Landing() {
           </a>
         </div>
 
-        {/* Demo hint */}
-        <p className="animate-fade-in delay-400 mt-4 text-xs text-zinc-500">
-          Try demo: <code className="text-indigo-400">demo@grindsync.com</code> / <code className="text-indigo-400">Demo@123</code>
-        </p>
 
         {/* Floating cards */}
         <div className="pointer-events-none relative mt-16 hidden h-48 w-full max-w-5xl md:block">
