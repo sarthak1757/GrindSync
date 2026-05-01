@@ -168,6 +168,7 @@ export default function Landing() {
             </Link>
             <Link
               to="/login"
+              state={{ register: true }}
               className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
             >
               Get Started
@@ -225,6 +226,7 @@ export default function Landing() {
         <div className="animate-fade-in delay-300 mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             to="/login"
+            state={{ register: true }}
             className="animate-pulse-glow group flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:bg-indigo-500 hover:scale-105"
           >
             Start Free

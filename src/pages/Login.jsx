@@ -10,11 +10,11 @@ export default function Login() {
   const { loginWithGoogle, loginWithEmail, registerWithEmail, resetPassword, firebaseConfigError } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isRegister, setIsRegister] = useState(false)
-  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const redirect = location.state?.from?.pathname || '/dashboard'
+  const [isRegister, setIsRegister] = useState(location.state?.register || false)
+  const [loading, setLoading] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
