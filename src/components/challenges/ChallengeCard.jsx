@@ -23,7 +23,8 @@ export default function ChallengeCard({ challenge, onSolve }) {
   const opponentData = challenge[opponentRole] || challenge.challenged
 
   const myStatus = myData?.status
-  const canSolve = challenge.status !== 'completed' && myStatus === 'pending'
+  const isParticipant = isChallenger || isChallenged
+  const canSolve = isParticipant && challenge.status !== 'completed' && myStatus !== 'completed'
   
   const isCompleted = challenge.status === 'completed' || timeLeftMs <= 0
 
@@ -70,7 +71,7 @@ export default function ChallengeCard({ challenge, onSolve }) {
         <div className="space-y-3 mt-4">
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-indigo-400 font-semibold">You ({myTime}m)</span>
+              <span className="text-indigo-400 font-semibold">{isParticipant ? 'You' : myData?.displayName} ({myTime}m)</span>
             </div>
             <div className="w-full h-2 rounded-full bg-zinc-800 overflow-hidden">
               <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${(myTime / maxTime) * 100}%` }}></div>
@@ -107,8 +108,8 @@ export default function ChallengeCard({ challenge, onSolve }) {
       {/* Progress Comparison */}
       <div className="mt-6 flex items-center justify-between gap-4">
         <div className="flex-1 flex flex-col items-center">
-          <ProgressiveImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${myData?.displayName || 'A'}`} alt="You" className="mb-2 h-12 w-12 rounded-full border-2 border-indigo-500 bg-indigo-500/20" />
-          <span className="text-xs font-bold text-indigo-300">You</span>
+          <ProgressiveImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${myData?.displayName || 'A'}`} alt="Player 1" className="mb-2 h-12 w-12 rounded-full border-2 border-indigo-500 bg-indigo-500/20" />
+          <span className="text-xs font-bold text-indigo-300">{isParticipant ? 'You' : myData?.displayName}</span>
           {myStatus === 'completed' ? (
              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded mt-1">Finished!</span>
           ) : (
@@ -119,7 +120,7 @@ export default function ChallengeCard({ challenge, onSolve }) {
         <div className="shrink-0 text-2xl font-black text-indigo-500/30 italic">VS</div>
         
         <div className="flex-1 flex flex-col items-center">
-          <ProgressiveImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${opponentData?.displayName || 'B'}`} alt="Opponent" className="mb-2 h-12 w-12 rounded-full border-2 border-zinc-700 bg-zinc-800 opacity-70" />
+          <ProgressiveImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${opponentData?.displayName || 'B'}`} alt="Player 2" className="mb-2 h-12 w-12 rounded-full border-2 border-zinc-700 bg-zinc-800 opacity-70" />
           <span className="text-xs font-bold text-zinc-400">{opponentData?.displayName}</span>
           {opponentData?.status === 'completed' ? (
              <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded mt-1">Finished!</span>
