@@ -9,64 +9,48 @@ const QUICK_ACTIONS = [
   "Am I ready for interviews?"
 ]
 
-const LANGUAGE_LABELS = {
-  cpp: 'C++',
-  cplusplus: 'C++',
-  js: 'JavaScript',
-  javascript: 'JavaScript',
-  python: 'Python',
-  py: 'Python',
-  java: 'Java',
-}
-
-const highlightCode = (code) => {
-  const escaped = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-
-  const tokenPattern = /(\/\/.*|#.*)|(".*?"|'.*?'|`.*?`)|\b(const|let|var|function|return|if|else|for|while|class|new|import|from|export|def|range|in|public|private|static|void|int|long|bool|true|false|null|None|vector|string|map|set|queue|stack)\b/g
-
-  return escaped.replace(tokenPattern, (match, comment, stringLiteral, keyword) => {
-    if (comment) return `<span class="text-zinc-500">${comment}</span>`
-    if (stringLiteral) return `<span class="text-emerald-300">${stringLiteral}</span>`
-    if (keyword) return `<span class="text-indigo-300">${keyword}</span>`
-    return match
-  })
-}
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 function MessageContent({ content }) {
-  const parts = String(content).split(/```(\w+)?\n?([\s\S]*?)```/g)
-
   return (
-    <div className="space-y-3">
-      {parts.map((part, index) => {
-        if (index % 3 === 1) return null
-
-        const isCode = index % 3 === 2
-        const language = isCode ? parts[index - 1]?.toLowerCase() || 'text' : ''
-
-        if (isCode) {
-          return (
-            <div key={index} className="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
-              <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
-                  {LANGUAGE_LABELS[language] || language}
-                </span>
+    <div className="prose prose-invert prose-sm max-w-none">
+      <ReactMarkdown
+        components={{
+          code({ node, inline, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '')
+            return !inline && match ? (
+              <div className="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 mt-2 mb-2">
+                <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-1.5 bg-zinc-900/50">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                    {match[1]}
+                  </span>
+                </div>
+                <SyntaxHighlighter
+                  {...props}
+                  style={vscDarkPlus}
+                  language={match[1]}
+                  PreTag="div"
+                  customStyle={{ margin: 0, background: 'transparent', padding: '12px' }}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
               </div>
-              <pre className="overflow-x-auto p-3 text-xs leading-relaxed text-zinc-100">
-                <code dangerouslySetInnerHTML={{ __html: highlightCode(part.trim()) }} />
-              </pre>
-            </div>
-          )
-        }
-
-        if (!part) return null
-        return <p key={index} className="whitespace-pre-wrap">{part}</p>
-      })}
+            ) : (
+              <code {...props} className="bg-zinc-800 rounded px-1 py-0.5 text-indigo-300">
+                {children}
+              </code>
+            )
+          }
+        }}
+      >
+        {String(content)}
+      </ReactMarkdown>
     </div>
   )
 }
+
 
 export default function MentorChat({ history, onSend, loading }) {
   const [input, setInput] = useState('')

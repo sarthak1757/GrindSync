@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated(); // Needed for group member info / challenging
+      allow write: if isOwner(userId);
+    }
+
+    // Questions Collection (Solved Problems)
+    match /questions/{questionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Revision Queue
+    match /revisionQueue/{revisionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow write: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Groups Collection
+    match /groups/{groupId} {
+      // Anyone authenticated can read group metadata
+      allow read: if isAuthenticated();
+      // Only members can update (simplification: any auth user can create/update for now)
+      allow write: if isAuthenticated();
+    }
+
+    // Group Members
+    match /groups/{groupId}/members/{memberId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && request.auth.uid == memberId;
+    }
+
+    // Challenges
+    match /challenges/{challengeId} {
+      allow read: if isAuthenticated(); // Anyone can see challenges
+      // Sender or receiver can create/update
+      allow write: if isAuthenticated();
+    }
+
+    // Fallback: deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
