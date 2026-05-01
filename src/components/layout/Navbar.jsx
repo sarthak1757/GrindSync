@@ -1,5 +1,5 @@
 import { createElement } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, ListChecks, LogOut, RefreshCw, Sparkles, Swords, User, Users } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
@@ -22,8 +22,14 @@ const linkClasses = ({ isActive }) => `
 
 export default function Navbar() {
   const { currentUser, logout } = useAuth()
+  const navigate = useNavigate()
   const displayName = currentUser?.displayName || currentUser?.email || 'Profile'
   const avatarInitial = displayName.charAt(0).toUpperCase()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
 
   return (
     <nav className="fixed top-0 right-0 left-0 z-40 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
@@ -66,7 +72,7 @@ export default function Navbar() {
             </NavLink>
             <button
               type="button"
-              onClick={logout}
+              onClick={handleLogout}
               className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-white active:scale-95"
             >
               <LogOut className="h-4 w-4" />
