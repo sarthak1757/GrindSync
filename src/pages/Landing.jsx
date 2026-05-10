@@ -1,5 +1,5 @@
 import { createElement, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   Brain,
   Bot,
@@ -137,6 +137,7 @@ export default function Landing() {
   const statsRef = useRef(null)
   const [statsVisible, setStatsVisible] = useState(false)
   const [heatmap]  = useState(generateHeatmap)
+  const location = useLocation()
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -162,13 +163,14 @@ export default function Landing() {
           <div className="flex items-center gap-3">
             <Link
               to="/login"
+              state={location.state}
               className="text-sm text-zinc-400 transition hover:text-zinc-100"
             >
               Sign in
             </Link>
             <Link
               to="/login"
-              state={{ register: true }}
+              state={{ ...location.state, register: true }}
               className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
             >
               Get Started
@@ -226,7 +228,7 @@ export default function Landing() {
         <div className="animate-fade-in delay-300 mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             to="/login"
-            state={{ register: true }}
+            state={{ ...location.state, register: true }}
             className="animate-pulse-glow group flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg transition-all hover:bg-indigo-500 hover:scale-105"
           >
             Start Free
@@ -443,6 +445,7 @@ export default function Landing() {
           </p>
           <Link
             to="/login"
+            state={{ ...location.state, register: true }}
             className="animate-pulse-glow group inline-flex items-center gap-3 rounded-2xl bg-indigo-600 px-10 py-4 text-lg font-bold text-white shadow-2xl transition-all hover:bg-indigo-500 hover:scale-105"
           >
             Get Started — It's Free

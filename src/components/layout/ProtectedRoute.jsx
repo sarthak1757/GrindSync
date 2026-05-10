@@ -7,6 +7,6 @@ export default function ProtectedRoute({ children }) {
   const location = useLocation()
 
   if (loading) return <Loader label="Checking authentication" fullScreen />
-  if (!currentUser) return <Navigate to="/login" replace state={{ from: location }} />
+  if (!currentUser) return <Navigate to="/" replace state={{ from: location }} />
   return children
 }
