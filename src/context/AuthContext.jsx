@@ -24,9 +24,16 @@ export function AuthProvider({ children }) {
     if (!auth) return undefined
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user)
-      if (user) await ensureUserDocument(user)
-      setLoading(false)
+      try {
+        setCurrentUser(user)
+        if (user) {
+          await ensureUserDocument(user)
+        }
+      } catch (error) {
+        console.error('[Auth Context Init Error]', error)
+      } finally {
+        setLoading(false)
+      }
     })
 
     return unsubscribe
